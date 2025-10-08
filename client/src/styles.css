@@ -1,6 +1,163 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+body {
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 30%, #7d28be 50%, #25174d 100%);
+  color: #fff;
+  font-family: 'Orbitron', 'Arial', sans-serif;
+}
 
-html,body,#root { height: 100%; }
-body { @apply bg-gradient-to-b from-purple-900 via-purple-700 to-purple-800 text-white; }
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+
+.neon-text {
+  font-family: 'Orbitron', 'Arial', sans-serif;
+  color: #fff;
+  text-shadow:
+    0 0 6px #ff00de,
+    0 0 12px #ff00de,
+    0 0 24px #b500a6,
+    0 0 32px #7d28be;
+  font-size: 3rem;
+  letter-spacing: 0.15em;
+  text-align: center;
+}
+
+.neon-panel {
+  background: linear-gradient(135deg,#2e0854 60%,#511c7e 90%);
+  border: 3px solid #d8aaff;
+  border-radius: 16px;
+  box-shadow: 0 0 32px #6a238d, 0 0 8px #ff00de inset;
+  padding: 1.5rem;
+}
+
+.neon-btn {
+  background: linear-gradient(90deg,#ff00de 30%,#511c7e 70%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 0 6px #ff00de, 0 0 12px #ff00de;
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 0.7em 1.2em;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.neon-btn:hover {
+  filter: brightness(1.25);
+}
+
+.neon-reel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  height: 130px;
+  margin: 0.5em;
+  border-radius: 18px;
+  border: 2px solid #ff00de;
+  background: linear-gradient(135deg,#511c7e 60%,#25174d 100%);
+  box-shadow: 0 0 24px #ff00de, 0 0 8px #7d28be inset;
+  position: relative;
+}
+
+.neon-reel.held {
+  box-shadow: 0 0 36px #ffe000, 0 0 20px #ffe000 inset;
+  border: 2px solid #ffe000;
+}
+
+.neon-symbol {
+  width: 48px;
+  height: 48px;
+  margin-top: 10px;
+  margin-bottom: 8px;
+  display: block;
+  filter: drop-shadow(0 0 8px #fff) drop-shadow(0 0 18px #ff00de);
+}
+
+.neon-scorebar-bg {
+  width: 100%;
+  height: 22px;
+  border-radius: 12px;
+  background: #25174d;
+  border: 2px solid #ff00de;
+  box-shadow: 0 0 12px #ff00de inset;
+  margin-bottom: 6px;
+}
+
+.neon-scorebar-fill {
+  height: 22px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ffe000 0%, #ff00de 100%);
+  box-shadow: 0 0 16px #ffe000 inset;
+}
+
+.neon-player-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.neon-player-list li {
+  margin-bottom: 8px;
+  padding: 7px 15px;
+  border-radius: 8px;
+  background: rgba(255,0,222,0.22);
+  font-weight: bold;
+  box-shadow: 0 0 8px #ff00de;
+}
+
+.neon-round {
+  font-size: 1.2em;
+  font-family: 'Orbitron', 'Arial', sans-serif;
+  color: #ffe000;
+  text-shadow: 0 0 6px #ffe000, 0 0 18px #ff00de;
+}
+
+.neon-current {
+  font-size: 1.1em;
+  color: #fff;
+  text-shadow: 0 0 4px #ffe000;
+  font-weight: bold;
+}
+
+.neon-controls {
+  display: flex;
+  gap: 1em;
+  justify-content: center;
+  margin-top: 1.5em;
+}
+
+.neon-symbol-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 1em 0;
+}
+
+.neon-goalbar {
+  width: 100%;
+  height: 22px;
+  border-radius: 12px;
+  background: #25174d;
+  border: 2px solid #ffe000;
+  box-shadow: 0 0 12px #ffe000 inset;
+  margin-bottom: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.neon-goalbar-fill {
+  height: 22px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ffe000 0%, #ff00de 100%);
+  box-shadow: 0 0 16px #ffe000 inset;
+  transition: width 0.8s cubic-bezier(.64,.09,.08,1.01);
+  position: absolute;
+  left: 0; top: 0;
+}
+
+@keyframes neon-glow {
+  0% { box-shadow: 0 0 12px #ff00de; }
+  50% { box-shadow: 0 0 24px #ffe000; }
+  100% { box-shadow: 0 0 12px #ff00de; }
+}

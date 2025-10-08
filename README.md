@@ -1,30 +1,42 @@
-# Pick Up — Multiplayer (prototype)
+# Pick Up — Fun4Four Neon Edition
 
-This bundle contains a working prototype of a multiplayer "Pick Up" slot-like game.
+**Multiplayer & Hotseat Slot-Game mit Neon-Design und Fun4Four-Regeln**
 
-## Quick start (local)
+## Features
 
-Requirements: Node.js
+- Neon-Design, animierte SVG-Symbole, Score & Zielbalken
+- Exakte Fun4Four-Spielregeln: 5 Walzen, Kronen-Multiplikator, Zielpunkte
+- Online-Multiplayer (max. 4 Spieler pro Raum)
+- Offline-Hotseat-Modus (alle Spieler teilen ein Gerät)
+- Schnell und einfach startklar!
 
-Start server:
+## Quick Start (local)
+
+**Voraussetzung:** Node.js installiert
+
+**Server starten:**
 ```
 cd server
 npm install
 npm start
 ```
 
-Start client (in another terminal):
+**Client starten (neues Terminal):**
 ```
 cd client
 npm install
 npm run dev
 ```
+Client läuft dann auf http://localhost:5173
 
-Default server URL: http://localhost:3001
-Make sure the client connects to the server (Vite dev server on port 5173 by default).
+## Spielregeln
 
-The uploaded design image has been included at `client/src/assets/pick-up-sprite.png`.
+- 5 Walzen, 3 Ziehungen pro Spieler
+- Kombinationen: 3 gleiche = 1000, 4 = 3000, 5 = 10000 Punkte
+- Kronen multiplizieren die Punkte
+- Ziel: Als Team 220.000 Punkte erreichen
+- Max. 4 Spieler, Online & Offline
 
-## Deployment
+---
 
-See the in-project instructions for deploying server and client to Render.com or use Dockerfiles if preferred.
+Falls du weitere Fragen hast oder Features möchtest, schreib mir einfach!
