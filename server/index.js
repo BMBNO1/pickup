@@ -13,14 +13,13 @@ const io = new Server(server, {
 });
 
 const MAX_SPIELER = 4;
-const MAX_RUNDEN = 5;
 const SYMBOLS = [
-  { key: 'kreis', label: 'Kreis', points3: 30, points4: 60, points5: 150 },
-  { key: 'dreieck', label: 'Dreieck', points3: 40, points4: 80, points5: 200 },
-  { key: 'quadrat', label: 'Quadrat', points3: 60, points4: 120, points5: 300 },
-  { key: 'herz', label: 'Herz', points3: 80, points4: 160, points5: 400 },
+  { key: 'joker', label: 'Joker', points3: 200, points4: 400, points5: 1000 },
   { key: 'stern', label: 'Stern', points3: 110, points4: 220, points5: 550 },
-  { key: 'joker', label: 'Joker', points3: 200, points4: 400, points5: 1000 }
+  { key: 'herz', label: 'Herz', points3: 80, points4: 160, points5: 400 },
+  { key: 'quadrat', label: 'Quadrat', points3: 60, points4: 120, points5: 300 },
+  { key: 'dreieck', label: 'Dreieck', points3: 40, points4: 80, points5: 200 },
+  { key: 'kreis', label: 'Kreis', points3: 30, points4: 60, points5: 150 },
 ];
 const KOMBIS = [
   { name: "Fünf verschiedene", points: 800 },
@@ -55,7 +54,8 @@ function createRoom() {
     spieler: [],
     started: false,
     runde: 1,
-    ended: false
+    ended: false,
+    maxRunden: 5
   };
 }
 
@@ -90,7 +90,7 @@ function comboCheck(reels, verbrauchte) {
   return result;
 }
 
-// Gibt vollständige Symbolpunkte-Liste zurück (inkl. „verbraucht“)
+// Symbolpunkte-Liste inkl. verbraucht
 function symbolPoints(reels, symbolVerbrauchte) {
   const freq = countSymbols(reels);
   return SYMBOLS.map(s => {
@@ -105,20 +105,21 @@ function symbolPoints(reels, symbolVerbrauchte) {
   });
 }
 
+// Keine Kombis/Symbole mehr auswählbar?
 function noKombiLeft(sp) {
-  // Keine Kombis/Symbole mehr auswählbar
   const kombis = comboCheck(sp.reels, sp.verbrauchte).length;
   const symbole = symbolPoints(sp.reels, sp.symbolVerbrauchte).filter(s=>s.punkte > 0 && !s.verbraucht).length;
   return kombis === 0 && symbole === 0;
 }
 
 io.on('connection', (socket) => {
-  socket.on('create-room', ({ roomId, name }, cb) => {
+  socket.on('create-room', ({ roomId, name, roundCount }, cb) => {
     if (!roomId || !name) return cb && cb({ ok: false, error: 'Room/Name fehlt' });
     if (!rooms[roomId]) rooms[roomId] = createRoom();
     if (rooms[roomId].spieler.length >= MAX_SPIELER) return cb && cb({ ok: false, error: 'Raum voll' });
     if (rooms[roomId].spieler.some(sp => sp.id === socket.id)) return cb && cb({ ok: false, error: 'Schon im Raum' });
     rooms[roomId].spieler.push(createPlayer(socket.id, name));
+    if (typeof roundCount === "number") rooms[roomId].maxRunden = Math.max(3, Math.min(10, roundCount));
     socket.join(roomId);
     io.to(roomId).emit('room-data', rooms[roomId]);
     cb && cb({ ok: true });
@@ -152,7 +153,7 @@ io.on('connection', (socket) => {
     const room = rooms[roomId];
     if (!room || !room.started) return;
     const sp = room.spieler.find(s => s.id === socket.id);
-    if (!sp || sp.beendet || sp.drawsLeft === 0) return;
+    if (!sp || sp.beendet) return;
     sp.holds[index] = !sp.holds[index];
     io.to(roomId).emit('game-update', room);
   });
@@ -161,27 +162,20 @@ io.on('connection', (socket) => {
     const room = rooms[roomId];
     if (!room || !room.started) return;
     const sp = room.spieler.find(s => s.id === socket.id);
-    if (!sp || sp.beendet || sp.drawsLeft === 0) return;
+    if (!sp || sp.beendet) return;
     sp.reels = sp.reels.map((s,i) => sp.holds[i] ? s : SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)].key);
     sp.drawsLeft -= 1;
     sp.symbolResults = symbolPoints(sp.reels, sp.symbolVerbrauchte);
-    sp.auswahlKombis = [];
-    sp.auswahlSymbole = [];
-    if (sp.drawsLeft === 0 || noKombiLeft(sp)) {
-      // Nach letztem Dreh oder nichts mehr möglich
-      sp.auswahlKombis = comboCheck(sp.reels, sp.verbrauchte);
-      sp.auswahlSymbole = symbolPoints(sp.reels, sp.symbolVerbrauchte)
-        .filter(s=>s.punkte > 0 && !s.verbraucht);
-    }
-    // Automatisches Rundenende: Wenn keine Auswahl mehr, Runde beenden
+    sp.auswahlKombis = comboCheck(sp.reels, sp.verbrauchte);
+    sp.auswahlSymbole = symbolPoints(sp.reels, sp.symbolVerbrauchte)
+      .filter(s=>s.punkte > 0 && !s.verbraucht);
     if (noKombiLeft(sp)) {
       sp.beendet = true;
       sp.runde = room.runde;
     }
     io.to(roomId).emit('game-update', room);
-    // Wenn alle Spieler fertig -> nächste Runde
     if (room.spieler.every(s => s.beendet)) {
-      if (room.runde >= MAX_RUNDEN) {
+      if ((room.maxRunden || 5) <= room.runde) {
         room.ended = true;
         io.to(roomId).emit('game-ended', room);
       } else {
@@ -200,39 +194,36 @@ io.on('connection', (socket) => {
     const room = rooms[roomId];
     if (!room || !room.started) return;
     const sp = room.spieler.find(s => s.id === socket.id);
-    if (!sp || sp.beendet || (sp.drawsLeft > 0 && !noKombiLeft(sp))) return;
+    if (!sp || sp.beendet) return;
     let punkteAdd = 0;
     if (kombiName) {
       const k = KOMBIS.find(k => k.name === kombiName);
       if (!k) return;
       punkteAdd = k.points;
       sp.verbrauchte.push(k.name);
-      sp.message = `Kombination "${k.name}" gewählt! +${k.points} Punkte`;
+      sp.message = `Kombination "${k.name}" gewählt!`;
     } else if (symbolKey) {
       const symbolData = symbolPoints(sp.reels, sp.symbolVerbrauchte).find(s => s.key === symbolKey);
       if (!symbolData) return;
       punkteAdd = symbolData.punkte;
       sp.symbolVerbrauchte.push(symbolKey);
-      sp.message = `Symbol "${symbolData.label}" gewählt! +${symbolData.punkte} Punkte`;
+      sp.message = `Symbol "${symbolData.label}" gewählt!`;
     }
     sp.punkte += punkteAdd;
     sp.auswahlKombis = [];
     sp.auswahlSymbole = [];
     sp.symbolResults = symbolPoints([], sp.symbolVerbrauchte);
-    // Nach Wertung: Runde vorbei wenn keine Auswahl mehr
     if (noKombiLeft(sp)) {
       sp.beendet = true;
       sp.runde = room.runde;
     } else {
-      // Für nächste Zug: alles zurücksetzen
       sp.reels = Array(5).fill(null);
       sp.holds = Array(5).fill(false);
       sp.drawsLeft = 3;
     }
     io.to(roomId).emit('game-update', room);
-    // Wenn alle Spieler fertig -> nächste Runde
     if (room.spieler.every(s => s.beendet)) {
-      if (room.runde >= MAX_RUNDEN) {
+      if ((room.maxRunden || 5) <= room.runde) {
         room.ended = true;
         io.to(roomId).emit('game-ended', room);
       } else {
