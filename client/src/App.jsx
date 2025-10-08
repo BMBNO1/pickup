@@ -188,9 +188,8 @@ export default function App() {
             const kombisSorted = [...KOMBIS].sort((a,b)=>b.points-a.points);
             const tableRows = [
               ...symbolResultsSorted.map(s=>({
-                label: "",
+                label: s.label,
                 icon: SYMBOLS.find(o=>o.key===s.key)?.svg,
-                punkte: s.punkte,
                 verbraucht: s.verbraucht,
                 type: "symbol",
                 key: s.key,
@@ -199,7 +198,6 @@ export default function App() {
               ...kombisSorted.map(k=>({
                 label: k.name,
                 icon: null,
-                punkte: k.points,
                 verbraucht: sp.verbrauchte.includes(k.name),
                 type: "kombi",
                 key: k.name,
@@ -242,32 +240,41 @@ export default function App() {
                 ))}
               </div>
               <div style={{fontSize:"0.85em",color:"#fff",minHeight:18}}>{sp.message}</div>
+              {/* Wertungsliste im Kombi-Design */}
               <div className="player-kombis" style={{marginTop:"0.7em"}}>
                 <div style={{fontWeight:"bold",marginBottom:"0.1em"}}>Wertung:</div>
-                <table className="points-table">
-                  <tbody>
+                <ul style={{listStyle:"none",padding:0}}>
                   {tableRows.map(row=>(
-                    <tr key={row.key}
-                      className="points-row"
+                    <li key={row.key}
                       style={{
-                        background: row.verbraucht ? "rgba(255,0,222,0.09)" : row.punkte>0 ? "rgba(255,224,0,0.15)" : "rgba(255,0,222,0.12)",
+                        marginBottom:8,
+                        padding:"8px 14px",
+                        borderRadius:"10px",
+                        background: row.verbraucht ? "rgba(255,0,222,0.09)" : "rgba(255,0,222,0.22)",
                         color: row.verbraucht ? "#aaa" : "#fff",
-                        height: "42px"
+                        fontWeight:"bold",
+                        boxShadow: "0 0 8px #ff00de",
+                        minHeight:"40px",
+                        display:"flex",
+                        alignItems:"center",
+                        justifyContent:"space-between"
                       }}
                     >
-                      <td style={{textAlign:"center",verticalAlign:"middle",width:"54px"}}>
-                        {row.icon && <span style={{verticalAlign:"middle"}}>{row.icon}</span>}
+                      <span>
+                        {row.icon && <span style={{marginRight:7,verticalAlign:"middle"}}>{row.icon}</span>}
                         {row.type==="kombi" && row.label}
-                      </td>
-                      <td style={{width:"120px",textAlign:"center"}}>
-                        {meId===sp.id && !roomState.ended && !sp.beendet && row.showBtn && (
-                          <button className="neon-btn" style={{padding:"2px 10px",fontSize:"0.98em",height:"28px"}} onClick={()=>row.type==="symbol"?chooseCombo(null,row.key):chooseCombo(row.key,null)}>Wählen</button>
+                      </span>
+                      <span>
+                        {meId===sp.id && !roomState.ended && !sp.beendet && row.showBtn && !row.verbraucht && (
+                          <button className="neon-btn" style={{marginLeft:10,padding:"4px 12px",fontSize:"1em"}} onClick={()=>row.type==="symbol"?chooseCombo(null,row.key):chooseCombo(row.key,null)}>Wählen</button>
                         )}
-                      </td>
-                    </tr>
+                        {row.verbraucht && (
+                          <span style={{marginLeft:7,color:"#aaa"}}>✓ erfüllt</span>
+                        )}
+                      </span>
+                    </li>
                   ))}
-                  </tbody>
-                </table>
+                </ul>
               </div>
               {meId===sp.id && !roomState.ended && !sp.beendet && (
                 <div style={{marginTop:"1.1em",textAlign:"center"}}>
