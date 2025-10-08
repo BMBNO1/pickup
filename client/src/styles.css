@@ -22,18 +22,18 @@ body {
 .neon-panel {
   background: linear-gradient(135deg,#2e0854 60%,#511c7e 90%);
   border: 3px solid #d8aaff;
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow: 0 0 32px #6a238d, 0 0 8px #ff00de inset;
-  padding: 1.2rem;
-  margin: 0 auto;
-  max-width: 1000px;
-  width: 90vw;
+  padding: 2.1rem 1rem 1.3rem 1rem;
+  margin: 0 auto 1.5rem auto;
+  max-width: 1050px;
+  width: 96vw;
 }
 .neon-btn {
   background: linear-gradient(90deg,#ff00de 30%,#511c7e 70%);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 16px;
   box-shadow: 0 0 6px #ff00de, 0 0 12px #ff00de;
   font-weight: bold;
   font-size: 1.05rem;
@@ -41,8 +41,9 @@ body {
   cursor: pointer;
   transition: filter 0.2s;
   margin: 4px 0;
+  outline: none;
 }
-.neon-btn:hover, .neon-btn:active {
+.neon-btn:hover, .neon-btn:active, .neon-btn:focus {
   filter: brightness(1.25);
 }
 .neon-reel {
@@ -50,113 +51,118 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 68px;
+  width: 64px;
+  height: 88px;
   margin: 0.2em;
-  border-radius: 14px;
-  border: 2px solid #ff00de;
+  border-radius: 16px;
+  border: 2.5px solid #ff00de;
   background: linear-gradient(135deg,#511c7e 60%,#25174d 100%);
   box-shadow: 0 0 24px #ff00de, 0 0 8px #7d28be inset;
   position: relative;
+  transition: border 0.18s, box-shadow 0.18s;
+  outline: none;
 }
 .neon-reel.held {
-  box-shadow: 0 0 36px #ffe000, 0 0 20px #ffe000 inset;
-  border: 2px solid #ffe000;
+  box-shadow: 0 0 48px #ffe000, 0 0 24px #ffe000 inset;
+  border: 2.5px solid #ffe000;
 }
 .neon-symbol {
-  width: 32px;
-  height: 32px;
-  margin-top: 2px;
+  width: 38px;
+  height: 38px;
+  margin-top: 4px;
   margin-bottom: 2px;
   display: block;
   filter: drop-shadow(0 0 8px #fff) drop-shadow(0 0 12px #ff00de);
 }
 .neon-round {
-  font-size: 1.1em;
+  font-size: 1.18em;
   font-family: 'Orbitron', 'Arial', sans-serif;
   color: #ffe000;
   text-shadow: 0 0 6px #ffe000, 0 0 18px #ff00de;
 }
 .neon-current {
-  font-size: 1em;
+  font-size: 1.03em;
   color: #fff;
   text-shadow: 0 0 4px #ffe000;
   font-weight: bold;
 }
 .players-row {
   display: flex;
-  gap: 1.5em;
+  gap: 2.2em;
   flex-wrap: wrap;
   justify-content: center;
   align-items: stretch;
+  margin: 0 auto 1em auto;
 }
 .player-card {
-  flex: 1 1 220px;
-  min-width: 220px;
-  max-width: 320px;
+  flex: 1 1 260px;
+  min-width: 240px;
+  max-width: 350px;
   background: rgba(255,0,222,0.09);
-  border-radius: 12px;
-  padding: 1em;
+  border-radius: 18px;
+  padding: 1.1em 1.1em 1.1em 1.1em;
   box-shadow: 0 0 8px #ff00de;
-  margin-bottom: 1em;
+  margin-bottom: 1.5em;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 .player-card.me {
-  background: rgba(255,224,0,0.15);
-  box-shadow: 0 0 16px #ffe000;
+  background: rgba(255,224,0,0.18);
+  box-shadow: 0 0 22px #ffe000;
 }
 .player-info {
   font-weight: bold;
   color: #ffe000;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
   text-align: center;
+  font-size: 1.12em;
 }
 .player-kombis {
   width: 100%;
 }
 @media (max-width: 900px) {
   .neon-panel {
-    padding: 0.7rem;
-    max-width: 98vw;
+    padding: 0.8rem;
+    max-width: 99vw;
   }
   .players-row {
-    gap: 0.7em;
+    gap: 0.85em;
   }
   .player-card, .player-card.me {
     min-width: 180px;
-    max-width: 98vw;
+    max-width: 99vw;
     padding: 0.7em;
   }
 }
-@media (max-width: 600px) {
+@media (max-width: 650px) {
   .neon-text {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
   }
   .neon-panel {
     padding: 0.45rem;
-    border-radius: 8px;
-    width: 98vw;
-    max-width: 98vw;
+    border-radius: 10px;
+    width: 99vw;
+    max-width: 99vw;
   }
   .players-row {
     flex-direction: column;
     gap: 0.4em;
+    margin-bottom: 0.2em;
   }
   .player-card, .player-card.me {
-    min-width: 98vw;
-    max-width: 98vw;
+    min-width: 99vw;
+    max-width: 99vw;
     padding: 0.4em;
-    font-size: 0.95em;
+    font-size: 0.97em;
   }
   .neon-btn {
-    font-size: 0.95rem;
+    font-size: 0.98rem;
     padding: 0.5em 0.8em;
   }
   .neon-reel, .neon-reel.held {
-    width: 36px;
-    height: 48px;
+    width: 42px;
+    height: 53px;
     margin: 0.1em;
   }
   .neon-symbol {

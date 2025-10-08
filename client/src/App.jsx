@@ -4,36 +4,40 @@ import io from 'socket.io-client';
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001';
 const socket = io(SOCKET_URL);
 
-const SYMBOLS = ['herz', 'stern', 'kreis', 'dreieck', 'quadrat', 'joker'];
-const SYMBOL_SVGS = {
-  herz: (<svg className="neon-symbol" viewBox="0 0 64 64"><path d="M32 58s-26-15-26-30a14 14 0 0 1 28-4 14 14 0 0 1 28 4c0 15-26 30-26 30z" fill="#ff00de" stroke="#ffe000" strokeWidth="3" /></svg>),
-  stern: (<svg className="neon-symbol" viewBox="0 0 64 64"><polygon points="32,7 39,27 61,27 43,39 50,59 32,47 14,59 21,39 3,27 25,27" fill="#ffe000" stroke="#ff00de" strokeWidth="3" /></svg>),
-  kreis: (<svg className="neon-symbol" viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="#fff" stroke="#ff00de" strokeWidth="3" /></svg>),
-  dreieck: (<svg className="neon-symbol" viewBox="0 0 64 64"><polygon points="32,12 56,52 8,52" fill="#4ee9ff" stroke="#ffe000" strokeWidth="3" /></svg>),
-  quadrat: (<svg className="neon-symbol" viewBox="0 0 64 64"><rect x="14" y="14" width="36" height="36" fill="#44ff44" stroke="#ffe000" strokeWidth="3" /></svg>),
-  joker: (<svg className="neon-symbol" viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="#ffe000" stroke="#ff00de" strokeWidth="3" /><text x="32" y="38" textAnchor="middle" fontSize="22" fill="#ff00de" fontWeight="bold">J</text></svg>)
-};
+const SYMBOLS = [
+  { key: 'kreis', label: 'Kreis', points3: 30, points4: 60, points5: 150, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="#fff" stroke="#ff00de" strokeWidth="3" /></svg>) },
+  { key: 'dreieck', label: 'Dreieck', points3: 40, points4: 80, points5: 200, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><polygon points="32,12 56,52 8,52" fill="#4ee9ff" stroke="#ffe000" strokeWidth="3" /></svg>) },
+  { key: 'quadrat', label: 'Quadrat', points3: 60, points4: 120, points5: 300, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><rect x="14" y="14" width="36" height="36" fill="#44ff44" stroke="#ffe000" strokeWidth="3" /></svg>) },
+  { key: 'herz', label: 'Herz', points3: 80, points4: 160, points5: 400, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><path d="M32 58s-26-15-26-30a14 14 0 0 1 28-4 14 14 0 0 1 28 4c0 15-26 30-26 30z" fill="#ff00de" stroke="#ffe000" strokeWidth="3" /></svg>) },
+  { key: 'stern', label: 'Stern', points3: 110, points4: 220, points5: 550, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><polygon points="32,7 39,27 61,27 43,39 50,59 32,47 14,59 21,39 3,27 25,27" fill="#ffe000" stroke="#ff00de" strokeWidth="3" /></svg>) },
+  { key: 'joker', label: 'Joker', points3: 200, points4: 400, points5: 1000, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="#ffe000" stroke="#ff00de" strokeWidth="3" /><text x="32" y="38" textAnchor="middle" fontSize="22" fill="#ff00de" fontWeight="bold">J</text></svg>) }
+];
 
-const MAX_SPIELER = 4;
-const MAX_RUNDEN = 5;
 const KOMBIS = [
-  { name: "Drei gleiche", points: 100 },
+  { name: "Fünf verschiedene", points: 800 },
+  { name: "Full House", points: 600 },
   { name: "Vier gleiche", points: 400 },
-  { name: "Fünf gleiche", points: 800 },
-  { name: "Zwei gleiche", points: 50 },
-  { name: "Full House", points: 500 },
-  { name: "Fünf verschiedene", points: 700 },
-  { name: "Joker", points: 200 }
+  { name: "Fünf gleiche", points: 900 },
+  { name: "Joker", points: 250 }
 ];
 
 function Reel({ symbol, held, onToggle }) {
+  const sObj = SYMBOLS.find(s=>s.key===symbol);
   return (
-    <div className={`neon-reel${held ? " held" : ""}`}>
-      {symbol ? SYMBOL_SVGS[symbol] : <div style={{height:48}} />}
-      <div style={{fontSize:"0.9em",marginTop:"-3px"}}>{symbol ? symbol.charAt(0).toUpperCase()+symbol.slice(1) : ""}</div>
-      <button className="neon-btn" style={{marginTop:6}} onClick={onToggle}>
-        {held ? "GEHALTEN" : "HALTEN"}
-      </button>
+    <div
+      className={`neon-reel${held ? " held" : ""}`}
+      tabIndex={0}
+      role="button"
+      title="Zum Halten auf das Symbol tippen/klicken"
+      style={{cursor: "pointer", outline: "none"}}
+      onClick={onToggle}
+      onKeyDown={e => { if (e.key === " " || e.key === "Enter") onToggle(); }}
+    >
+      {sObj ? sObj.svg : <div style={{height:48}} />}
+      <div style={{fontSize:"0.9em",marginTop:"-3px"}}>{sObj ? sObj.label : ""}</div>
+      {held && <div style={{
+        position: "absolute", top: 3, right: 4, background: "#ffe000", color: "#511c7e", borderRadius: "10px", padding: "0 6px", fontSize: "0.80em", fontWeight: "bold", boxShadow: "0 0 6px #ffe000"
+      }}>GEHALTEN</div>}
     </div>
   );
 }
@@ -95,41 +99,8 @@ export default function App() {
 
   function toggleHold(i) { socket.emit("toggle-hold", { roomId: room, index: i }); }
   function roll() { socket.emit("roll-reels", { roomId: room }); }
-  function chooseCombo(name) { socket.emit("choose-combo", { roomId: room, kombiName: name }); }
+  function chooseCombo(kombiName, symbolKey) { socket.emit("choose-combo", { roomId: room, kombiName, symbolKey }); }
   function restartGame() { socket.emit("restart-game", { roomId: room }); setShowEnd(false); }
-
-  function isErfüllbar(name) {
-    if (!me) return false;
-    const verbrauchte = me.verbrauchte || [];
-    if (verbrauchte.includes(name)) return false;
-    const reels = me.reels || [];
-    if (name === "Drei gleiche") return hasNOfAKind(reels,3);
-    if (name === "Vier gleiche") return hasNOfAKind(reels,4);
-    if (name === "Fünf gleiche") return hasNOfAKind(reels,5);
-    if (name === "Zwei gleiche") return hasNOfAKind(reels,2);
-    if (name === "Full House") return isFullHouse(reels);
-    if (name === "Fünf verschiedene") return isFiveDifferent(reels);
-    if (name === "Joker") return isJoker(reels);
-    return false;
-  }
-  function hasNOfAKind(reels, n) {
-    const freq = {};
-    reels.forEach(s => { freq[s] = (freq[s]||0)+1; });
-    return Object.values(freq).includes(n);
-  }
-  function isFullHouse(reels) {
-    const freq = {};
-    reels.forEach(s => { freq[s] = (freq[s]||0)+1; });
-    const vals = Object.values(freq).sort();
-    return vals.length === 2 && vals[0] === 2 && vals[1] === 3;
-  }
-  function isFiveDifferent(reels) {
-    const set = new Set(reels);
-    return set.size === 5;
-  }
-  function isJoker(reels) {
-    return reels.includes("joker");
-  }
 
   let sieger = [];
   if (showEnd && spieler.length > 0) {
@@ -163,77 +134,119 @@ export default function App() {
       )}
       {roomState.started && (
         <div className="neon-panel">
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:"1em",flexWrap:"wrap"}}>
-            <div className="neon-round">Runde: {roomState.runde} / {MAX_RUNDEN}</div>
-            <div className="neon-current">Max. Spieler: {MAX_SPIELER}</div>
+          <div style={{
+            display:"flex",
+            justifyContent:"space-between",
+            marginBottom:"1em",
+            flexWrap:"wrap",
+            alignItems:"center"
+          }}>
+            <div className="neon-round">Runde: {roomState.runde} / 5</div>
+            <div className="neon-current">Max. Spieler: 4</div>
             <div className="neon-current">Raum: {room}</div>
             <button className="neon-btn" onClick={leaveRoom}>Verlassen</button>
           </div>
           <div className="players-row">
-            {spieler.map(sp=>(
+            {spieler.map(sp=>{
+              // Symbolpunkte, sortiert nach Symbolwert absteigend
+              const symbolResultsSorted = [...(sp.symbolResults || [])]
+                .sort((a,b)=>b.points5-a.points5);
+              return (
               <div key={sp.id} className={`player-card${meId===sp.id ? " me" : ""}`}>
                 <div className="player-info">{sp.name}</div>
                 <div>Runde: {sp.runde}</div>
                 <div>Punkte: {sp.punkte}</div>
                 <div>Ziehungen: {sp.drawsLeft} / 3</div>
-                <div style={{display:"flex",justifyContent:"center",gap:"6px",margin:"0.7em 0"}}>
+                <div style={{
+                  display:"flex",
+                  justifyContent:"center",
+                  gap:"10px",
+                  margin:"0.7em 0",
+                  flexWrap: "wrap"
+                }}>
                   {(sp.reels||[]).map((s,i)=>(
-                    <div key={i} className={`neon-reel${sp.holds && sp.holds[i] ? " held" : ""}`}>
-                      {s ? SYMBOL_SVGS[s] : <div style={{height:28}} />}
-                    </div>
+                    <Reel
+                      key={i}
+                      symbol={s}
+                      held={sp.holds && sp.holds[i]}
+                      onToggle={()=>{
+                        if(meId===sp.id && !roomState.ended && !sp.beendet && sp.drawsLeft>0){
+                          toggleHold(i);
+                        }
+                      }}
+                    />
                   ))}
                 </div>
                 <div style={{fontSize:"0.85em",color:"#fff",minHeight:18}}>{sp.message}</div>
-                {/* Kombi-Auswahl Buttons für eigenen Spieler */}
-                {meId===sp.id && !roomState.ended && !sp.beendet && sp.drawsLeft===0 && (sp.auswahlKombis && sp.auswahlKombis.length > 0) && (
-                  <div style={{marginTop:"0.5em"}}>
-                    <div style={{fontWeight:"bold",marginBottom:"0.2em"}}>Wähle eine Kombination:</div>
-                    <div style={{display:"flex",gap:"7px",flexWrap:"wrap"}}>
-                      {sp.auswahlKombis.map(k=>(
-                        <button className="neon-btn" key={k.name} onClick={()=>chooseCombo(k.name)}>
-                          {k.name} (+{k.points * 0.5} Punkte)
-                        </button>
+                {symbolResultsSorted.length > 0 && (
+                  <div style={{marginBottom:8,marginTop:6}}>
+                    <div style={{fontWeight:"bold",marginBottom:"2px"}}>Symbolpunkte:</div>
+                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap",justifyContent:"center"}}>
+                      {symbolResultsSorted.map(s=>(
+                        <div key={s.key} style={{background:"rgba(255,224,0,0.15)",borderRadius:"7px",padding:"3px 10px",color:"#ffe000",fontWeight:"bold",fontSize:"0.95em",boxShadow:"0 0 6px #ffe000"}}>
+                          {SYMBOLS.find(o=>o.key===s.key)?.svg}
+                          {s.label}: {s.count}x = {s.punkte} Punkte
+                        </div>
                       ))}
                     </div>
                   </div>
                 )}
-                {/* Halten/Ziehen wie gehabt */}
+                {meId===sp.id && !roomState.ended && !sp.beendet && (sp.auswahlKombis.length > 0 || sp.auswahlSymbole.length > 0) && (
+                  <div style={{marginTop:"0.5em"}}>
+                    {sp.auswahlSymbole.length > 0 && (
+                      <div>
+                        <div style={{fontWeight:"bold",marginBottom:"0.2em"}}>Wähle ein Symbol:</div>
+                        <div style={{display:"flex",gap:"7px",flexWrap:"wrap"}}>
+                          {sp.auswahlSymbole.map(s=>(
+                            <button className="neon-btn" key={s.key} onClick={()=>chooseCombo(null,s.key)}>
+                              {s.label} ({s.count}x = {s.punkte} Punkte)
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {sp.auswahlKombis.length > 0 && (
+                      <div style={{marginTop:"8px"}}>
+                        <div style={{fontWeight:"bold",marginBottom:"0.2em"}}>Oder wähle eine Kombination:</div>
+                        <div style={{display:"flex",gap:"7px",flexWrap:"wrap"}}>
+                          {[...sp.auswahlKombis].sort((a,b)=>b.points-a.points).map(k=>(
+                            <button className="neon-btn" key={k.name} onClick={()=>chooseCombo(k.name,null)}>
+                              {k.name} (+{k.points} Punkte)
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {meId===sp.id && !roomState.ended && !sp.beendet && sp.drawsLeft>0 && (
                   <div style={{marginTop:"0.5em"}}>
-                    <div style={{display:"flex",gap:"5px",justifyContent:"center"}}>
-                      {sp.reels && sp.reels.map((_,i)=>
-                        <button className="neon-btn" style={{fontSize:"0.8em",padding:"2px 8px"}} key={i} onClick={()=>toggleHold(i)}>
-                          {sp.holds[i]?"GEHALTEN":"HALTEN"}
-                        </button>
-                      )}
-                    </div>
                     <button className="neon-btn" style={{marginTop:"0.5em"}} onClick={roll}>Ziehen</button>
                   </div>
                 )}
                 <div className="player-kombis" style={{marginTop:"0.4em"}}>
                   <div style={{fontWeight:"bold"}}>Kombinationen:</div>
                   <ul style={{listStyle:"none",padding:0}}>
-                    {KOMBIS.map(k=>(
+                    {[...KOMBIS].sort((a,b)=>b.points-a.points).map(k=>(
                       <li key={k.name}
                         style={{
                           marginBottom:5,
                           padding:"5px 8px",
                           borderRadius:"8px",
-                          background: sp.verbrauchte.includes(k.name) ? "rgba(255,0,222,0.12)" : (meId===sp.id && isErfüllbar(k.name)) ? "rgba(255,224,0,0.22)" : "rgba(255,0,222,0.22)",
+                          background: sp.verbrauchte.includes(k.name) ? "rgba(255,0,222,0.12)" : "rgba(255,0,222,0.22)",
                           fontWeight:"bold",
                           color: sp.verbrauchte.includes(k.name) ? "#aaa" : "#fff",
-                          boxShadow: (meId===sp.id && isErfüllbar(k.name)) ? "0 0 8px #ffe000" : "0 0 8px #ff00de"
+                          boxShadow: "0 0 8px #ff00de"
                         }}
                       >
                         {k.name} <span style={{float:"right",color:"#ffe000"}}>{k.points} Punkte</span>
                         {sp.verbrauchte.includes(k.name) && <span style={{marginLeft:12,color:"#aaa"}}>✓ erfüllt</span>}
-                        {(meId===sp.id && isErfüllbar(k.name)) && <span style={{marginLeft:12,color:"#ffe000"}}>Jetzt erfüllbar!</span>}
                       </li>
                     ))}
                   </ul>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
           {showEnd && sieger.length > 0 && (
             <div style={{marginTop:"2em", fontWeight:"bold", color:"#ffe000", fontSize:"1.3em"}}>

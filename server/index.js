@@ -14,15 +14,20 @@ const io = new Server(server, {
 
 const MAX_SPIELER = 4;
 const MAX_RUNDEN = 5;
-const SYMBOLS = ['herz', 'stern', 'kreis', 'dreieck', 'quadrat', 'joker'];
+const SYMBOLS = [
+  { key: 'kreis', label: 'Kreis', points3: 30, points4: 60, points5: 150 },
+  { key: 'dreieck', label: 'Dreieck', points3: 40, points4: 80, points5: 200 },
+  { key: 'quadrat', label: 'Quadrat', points3: 60, points4: 120, points5: 300 },
+  { key: 'herz', label: 'Herz', points3: 80, points4: 160, points5: 400 },
+  { key: 'stern', label: 'Stern', points3: 110, points4: 220, points5: 550 },
+  { key: 'joker', label: 'Joker', points3: 200, points4: 400, points5: 1000 }
+];
 const KOMBIS = [
-  { name: "Drei gleiche", points: 100 },
+  { name: "Fünf verschiedene", points: 800 },
+  { name: "Full House", points: 600 },
   { name: "Vier gleiche", points: 400 },
-  { name: "Fünf gleiche", points: 800 },
-  { name: "Zwei gleiche", points: 50 },
-  { name: "Full House", points: 500 },
-  { name: "Fünf verschiedene", points: 700 },
-  { name: "Joker", points: 200 }
+  { name: "Fünf gleiche", points: 900 },
+  { name: "Joker", points: 250 }
 ];
 
 const rooms = {};
@@ -35,10 +40,13 @@ function createPlayer(id, name) {
     drawsLeft: 3,
     punkte: 0,
     verbrauchte: [],
+    symbolVerbrauchte: [],
     beendet: false,
     runde: 1,
     message: '',
-    auswahlKombis: []
+    auswahlKombis: [],
+    auswahlSymbole: [],
+    symbolResults: SYMBOLS.map(s => ({ ...s, count: 0, punkte: 0, punkteLabel: "" }))
   };
 }
 
@@ -51,39 +59,56 @@ function createRoom() {
   };
 }
 
-function hasNOfAKind(reels, n) {
+function countSymbols(reels) {
   const freq = {};
   reels.forEach(s => { freq[s] = (freq[s]||0)+1; });
-  return Object.values(freq).includes(n);
+  return freq;
 }
-function isFullHouse(reels) {
-  const freq = {};
-  reels.forEach(s => { freq[s] = (freq[s]||0)+1; });
-  const vals = Object.values(freq).sort();
-  return vals.length === 2 && vals[0] === 2 && vals[1] === 3;
-}
+
 function isFiveDifferent(reels) {
   const set = new Set(reels);
   return set.size === 5;
+}
+function isFullHouse(reels) {
+  const freq = Object.values(countSymbols(reels)).sort();
+  return freq.length === 2 && freq[0] === 2 && freq[1] === 3;
+}
+function hasNOfAKind(reels, n) {
+  const freq = Object.values(countSymbols(reels));
+  return freq.includes(n);
 }
 function isJoker(reels) {
   return reels.includes("joker");
 }
 function comboCheck(reels, verbrauchte) {
   const result = [];
-  for (const k of KOMBIS) {
-    if (verbrauchte.includes(k.name)) continue;
-    let ok = false;
-    if (k.name === "Drei gleiche") ok = hasNOfAKind(reels,3);
-    else if (k.name === "Vier gleiche") ok = hasNOfAKind(reels,4);
-    else if (k.name === "Fünf gleiche") ok = hasNOfAKind(reels,5);
-    else if (k.name === "Zwei gleiche") ok = hasNOfAKind(reels,2);
-    else if (k.name === "Full House") ok = isFullHouse(reels);
-    else if (k.name === "Fünf verschiedene") ok = isFiveDifferent(reels);
-    else if (k.name === "Joker") ok = isJoker(reels);
-    if (ok) result.push(k);
-  }
+  if (!verbrauchte.includes("Fünf verschiedene") && isFiveDifferent(reels)) result.push(KOMBIS[0]);
+  if (!verbrauchte.includes("Full House") && isFullHouse(reels)) result.push(KOMBIS[1]);
+  if (!verbrauchte.includes("Vier gleiche") && hasNOfAKind(reels,4)) result.push(KOMBIS[2]);
+  if (!verbrauchte.includes("Fünf gleiche") && hasNOfAKind(reels,5)) result.push(KOMBIS[3]);
+  if (!verbrauchte.includes("Joker") && isJoker(reels)) result.push(KOMBIS[4]);
   return result;
+}
+
+// Für die Symbolpunkte: Gibt ein Array zurück mit SymbolKey, Anzahl und Punkte (ab 3)
+function symbolPoints(reels, symbolVerbrauchte) {
+  const freq = countSymbols(reels);
+  return SYMBOLS.map(s => {
+    const n = freq[s.key] || 0;
+    let punkte = 0, label = "";
+    if (!symbolVerbrauchte.includes(s.key)) {
+      if (n === 3) { punkte = s.points3; label = "3x"; }
+      else if (n === 4) { punkte = s.points4; label = "4x"; }
+      else if (n === 5) { punkte = s.points5; label = "5x"; }
+    }
+    return { ...s, count: n, punkte, punkteLabel: label };
+  }).filter(s => s.punkte > 0);
+}
+
+function noKombiLeft(sp) {
+  // Keine Kombis mehr auswählbar und keine Symbolpunkte auswählbar
+  return comboCheck(sp.reels, sp.verbrauchte).length === 0 &&
+    symbolPoints(sp.reels, sp.symbolVerbrauchte).length === 0;
 }
 
 io.on('connection', (socket) => {
@@ -127,8 +152,6 @@ io.on('connection', (socket) => {
     if (!room || !room.started) return;
     const sp = room.spieler.find(s => s.id === socket.id);
     if (!sp || sp.beendet || sp.drawsLeft === 0) return;
-    const heldCount = sp.holds.filter(Boolean).length;
-    if (!sp.holds[index] && heldCount >= 2) return;
     sp.holds[index] = !sp.holds[index];
     io.to(roomId).emit('game-update', room);
   });
@@ -138,35 +161,56 @@ io.on('connection', (socket) => {
     if (!room || !room.started) return;
     const sp = room.spieler.find(s => s.id === socket.id);
     if (!sp || sp.beendet || sp.drawsLeft === 0) return;
-    sp.reels = sp.reels.map((s,i) => sp.holds[i] ? s : SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]);
+    sp.reels = sp.reels.map((s,i) => sp.holds[i] ? s : SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)].key);
     sp.drawsLeft -= 1;
-    if (sp.drawsLeft === 0) {
+    sp.symbolResults = symbolPoints(sp.reels, sp.symbolVerbrauchte);
+    sp.auswahlKombis = [];
+    sp.auswahlSymbole = [];
+    if (sp.drawsLeft === 0 || noKombiLeft(sp)) {
+      // Nach letztem Dreh oder nichts mehr möglich
       sp.auswahlKombis = comboCheck(sp.reels, sp.verbrauchte);
+      sp.auswahlSymbole = symbolPoints(sp.reels, sp.symbolVerbrauchte);
     }
     io.to(roomId).emit('game-update', room);
   });
 
-  socket.on('choose-combo', ({ roomId, kombiName }) => {
+  socket.on('choose-combo', ({ roomId, kombiName, symbolKey }) => {
     const room = rooms[roomId];
     if (!room || !room.started) return;
     const sp = room.spieler.find(s => s.id === socket.id);
-    if (!sp || sp.beendet || sp.drawsLeft !== 0) return;
-    const k = KOMBIS.find(k => k.name === kombiName);
-    if (!k) return;
-    sp.punkte += k.points * 0.5;
-    sp.verbrauchte.push(k.name);
-    sp.message = `Kombination "${k.name}" gewählt! +${k.points * 0.5} Punkte`;
+    if (!sp || sp.beendet || (sp.drawsLeft > 0 && !noKombiLeft(sp))) return;
+    let punkteAdd = 0;
+    if (kombiName) {
+      const k = KOMBIS.find(k => k.name === kombiName);
+      if (!k) return;
+      punkteAdd = k.points;
+      sp.verbrauchte.push(k.name);
+      sp.message = `Kombination "${k.name}" gewählt! +${k.points} Punkte`;
+    } else if (symbolKey) {
+      const symbolData = symbolPoints(sp.reels, sp.symbolVerbrauchte).find(s => s.key === symbolKey);
+      if (!symbolData) return;
+      punkteAdd = symbolData.punkte;
+      sp.symbolVerbrauchte.push(symbolKey);
+      sp.message = `Symbol "${symbolData.label}" gewählt! +${symbolData.punkte} Punkte`;
+    }
+    sp.punkte += punkteAdd;
     sp.auswahlKombis = [];
+    sp.auswahlSymbole = [];
+    sp.symbolResults = symbolPoints([], []);
+    // Nach Wertung: Runde vorbei wenn nichts mehr möglich oder alles aufgebraucht
     const alleKombisVerbraucht = sp.verbrauchte.length === KOMBIS.length;
-    const keineKombiMehr = comboCheck(sp.reels, sp.verbrauchte).length === 0;
-    if (alleKombisVerbraucht || keineKombiMehr) {
+    const alleSymboleVerbraucht = sp.symbolVerbrauchte.length === SYMBOLS.length;
+    if (alleKombisVerbraucht && alleSymboleVerbraucht) {
       sp.beendet = true;
       sp.runde = room.runde;
+    } else {
+      // Für nächste Runde: alles zurücksetzen
+      sp.reels = Array(5).fill(null);
+      sp.holds = Array(5).fill(false);
+      sp.drawsLeft = 3;
     }
-    sp.drawsLeft = 3;
-    sp.holds = Array(5).fill(false);
-    sp.reels = Array(5).fill(null);
     io.to(roomId).emit('game-update', room);
+    // Wenn alle Spieler fertig -> nächste Runde
     if (room.spieler.every(s => s.beendet)) {
       if (room.runde >= MAX_RUNDEN) {
         room.ended = true;
