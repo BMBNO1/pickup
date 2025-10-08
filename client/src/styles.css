@@ -1,139 +1,49 @@
 body {
-  min-height: 100vh;
   background: #181622;
   color: #fff;
   font-family: 'Orbitron', 'Arial', sans-serif;
   margin: 0;
   padding: 0;
 }
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
-.neon-text {
-  font-family: 'Orbitron', 'Arial', sans-serif;
-  color: #ffe000;
-  text-shadow:
-    0 0 6px #ff00de,
-    0 0 12px #ff00de,
-    0 0 24px #b500a6,
-    0 0 32px #222;
-  font-size: 2.2rem;
-  letter-spacing: 0.15em;
-  text-align: center;
-}
 .neon-panel {
-  background: linear-gradient(135deg,#1a1428 60%,#23203b 100%);
-  border: 2px solid #4a3185;
-  border-radius: 18px;
-  box-shadow: 0 0 18px #211a32, 0 0 6px #180828 inset;
-  padding: 1.3rem 0.7rem 1rem 0.7rem;
-  margin: 0 auto 1.2rem auto;
-  max-width: 970px;
-  width: 96vw;
-}
-.neon-btn {
-  background: linear-gradient(90deg,#231c3a 30%,#511c7e 70%);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 0 4px #ff00de, 0 0 7px #23203b;
-  font-weight: bold;
-  font-size: 1.01rem;
-  padding: 0.5em 1em;
-  cursor: pointer;
-  transition: filter 0.2s;
-  margin: 2px 0;
-  outline: none;
-}
-.neon-btn:hover, .neon-btn:active, .neon-btn:focus {
-  filter: brightness(1.25);
-}
-.neon-reel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 60px;
-  margin: 0.15em;
-  border-radius: 10px;
-  border: 2px solid #ff00de;
-  background: #222;
-  box-shadow: 0 0 16px #211a32, 0 0 7px #ff00de inset;
-  position: relative;
-  transition: border 0.13s, box-shadow 0.13s;
-  outline: none;
-  overflow: hidden;
-}
-.neon-reel.held {
-  box-shadow: 0 0 30px #ffe000, 0 0 18px #ffe000 inset;
-  border: 2px solid #ffe000;
-}
-.neon-reel .reel-frame {
-  width: 34px;
-  height: 34px;
   background: #181622;
-  border-radius: 50%;
-  box-shadow: 0 0 7px #ffe000, 0 0 14px #ff00de inset;
-  margin-bottom: 2px;
-  margin-top: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  transition: box-shadow 0.13s;
-}
-.neon-reel.spinning .reel-frame {
-  animation: spin-reel 0.32s cubic-bezier(.64,.21,.7,1.63) infinite;
-}
-@keyframes spin-reel {
-  0% { transform: rotate(0deg) scale(1); opacity: 1;}
-  85% { transform: rotate(180deg) scale(1.12); opacity: 0.78;}
-  100% { transform: rotate(360deg) scale(1); opacity: 1;}
-}
-.neon-symbol {
-  width: 24px;
-  height: 24px;
-  margin-top: 0px;
-  margin-bottom: 2px;
-  display: block;
-  filter: drop-shadow(0 0 7px #ff00de) drop-shadow(0 0 8px #ffe000);
+  border: 2px solid #23203b;
+  border-radius: 16px;
+  box-shadow: 0 0 8px #181628;
+  padding: 1rem 0.7rem 1rem 0.7rem;
+  margin: 0 auto 1em auto;
+  max-width: 950px;
+  width: 98vw;
 }
 .players-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1.2em;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 0.8em;
   justify-content: center;
-  align-items: stretch;
   margin: 0 auto 1em auto;
-  width: 100%;
   max-width: 100vw;
 }
 .player-card {
   background: #23203b;
   border-radius: 13px;
-  padding: 1.1em 0.7em 1.2em 0.7em;
-  box-shadow: 0 0 14px #211a32;
+  padding: 1em 0.6em 1em 0.6em;
+  box-shadow: 0 0 8px #181628;
   min-width: 0;
   max-width: 99vw;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  margin: 0 auto;
-  position: relative;
-}
-.player-card.me {
-  background: #1c1830;
-  box-shadow: 0 0 18px #ffe000;
 }
 .player-info {
   font-weight: bold;
   color: #ffe000;
   margin-bottom: 7px;
   text-align: center;
-  font-size: 1.13em;
 }
 .player-kombis {
   width: 100%;
+  margin-top: 0.3em;
 }
 .score-list {
   margin: 0;
@@ -142,114 +52,132 @@ body {
 }
 .score-row {
   margin-bottom: 2px;
-  padding: 3px 9px;
+  padding: 4px 10px;
   border-radius: 7px;
   font-weight: bold;
-  min-height:26px;
+  min-height:24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 0 5px #211a32;
   font-size: 1.01em;
-  height: 32px;
+  height: 30px;
 }
-.score-row .score-icon {
+.score-icon {
   margin-right: 6px;
-  vertical-align: middle;
 }
-.score-row .score-done {
+.score-done {
   color: #bbb;
   font-weight: bold;
-  font-size: 1em;
 }
-.score-row .neon-btn {
-  margin-left: 8px;
-  padding: 2px 7px;
-  font-size: 0.97em;
-  height: 24px;
-}
-.score-left {
+.score-left, .score-right {
   display: flex;
   align-items: center;
-  gap: 2px;
-}
-.score-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 .reels-row {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  margin: 0.7em auto 0.5em auto;
-  min-height: 46px;
+  gap: 7px;
+  margin: 0.6em auto 0.5em auto;
+  min-height: 42px;
 }
-.firework-points {
-  position: absolute;
-  left: 50%; top: 34%;
-  transform: translate(-50%, 0);
-  z-index: 10;
-  font-size: 2em;
-  animation: fireworkPop 1.6s cubic-bezier(.5,1.6,.8,.9);
-  pointer-events: none;
+.neon-btn {
+  background: #23203b;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 0 4px #23203b;
+  font-weight: bold;
+  font-size: 1em;
+  padding: 0.4em 0.9em;
+  cursor: pointer;
 }
-@keyframes fireworkPop {
-  0% { opacity: 0; transform: scale(0.2) translate(-50%, -10px);}
-  30% { opacity: 1; transform: scale(1.18) translate(-50%, 10px);}
-  80% { opacity: 1; }
-  100% { opacity: 0; transform: scale(0.8) translate(-50%, 60px);}
+.neon-btn:hover, .neon-btn:active, .neon-btn:focus {
+  background: #333;
+  filter: brightness(1.18);
 }
-.firework-emoji { margin-right: 0.4em; }
-.firework-points-text { color: #ffe000; text-shadow: 0 0 12px #ff00de, 0 0 20px #ffe000; }
+.neon-reel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 52px;
+  margin: 0.11em;
+  border-radius: 9px;
+  border: 2px solid #ff00de;
+  background: #222;
+  box-shadow: 0 0 8px #181628, 0 0 7px #ff00de inset;
+  position: relative;
+  transition: border 0.13s;
+  outline: none;
+  overflow: hidden;
+}
+.neon-reel.held {
+  box-shadow: 0 0 17px #ffe000, 0 0 9px #ffe000 inset;
+  border: 2px solid #ffe000;
+}
+.neon-reel .reel-frame {
+  width: 26px;
+  height: 26px;
+  background: #181622;
+  border-radius: 50%;
+  margin-bottom: 2px;
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.neon-symbol {
+  width: 14px;
+  height: 14px;
+  margin-top: 0px;
+  margin-bottom: 2px;
+  display: block;
+}
 @media (max-width: 950px) {
   .players-row {
     grid-template-columns: 1fr 1fr;
-    gap: 1em;
+    gap: 0.7em;
     max-width: 99vw;
   }
-  .player-card, .player-card.me {
+  .player-card {
     max-width: 99vw;
-    padding: 0.8em 0.4em;
+    padding: 0.7em 0.3em;
     font-size: 1em;
   }
 }
 @media (max-width: 650px) {
   .players-row {
     grid-template-columns: 1fr;
-    gap: 0.7em;
+    gap: 0.6em;
     max-width: 99vw;
   }
-  .player-card, .player-card.me {
+  .player-card {
     max-width: 99vw;
-    padding: 0.4em 0.1em;
+    padding: 0.3em 0.1em;
     font-size: 0.97em;
     border-radius: 7px;
   }
   .neon-panel {
-    padding: 0.28rem;
+    padding: 0.18rem;
     border-radius: 7px;
     width: 99vw;
     max-width: 99vw;
   }
   .neon-reel, .neon-reel.held {
-    width: 28px;
-    height: 39px;
+    width: 22px;
+    height: 30px;
     margin: 0.08em;
   }
   .neon-symbol {
-    width: 14px;
-    height: 14px;
+    width: 8px;
+    height: 8px;
   }
   .score-row {
     font-size: 0.97em;
-    min-height:18px;
-    height: 22px;
-    padding: 2px 4px;
-  }
-  .score-row .neon-btn {
-    font-size: 0.93em;
-    padding: 1px 4px;
-    height: 18px;
+    min-height:16px;
+    height: 20px;
+    padding: 1px 3px;
   }
 }
