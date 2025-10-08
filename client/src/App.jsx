@@ -20,12 +20,12 @@ function playSound(name) {
 window.soundOn = true;
 
 const SYMBOLS = [
-  { key: 'joker', label: 'Joker', points3: 200, points4: 400, points5: 1000, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="#ffe000" stroke="#ff00de" strokeWidth="3" /><text x="32" y="38" textAnchor="middle" fontSize="22" fill="#ff00de" fontWeight="bold">J</text></svg>) },
-  { key: 'stern', label: 'Stern', points3: 110, points4: 220, points5: 550, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><polygon points="32,7 39,27 61,27 43,39 50,59 32,47 14,59 21,39 3,27 25,27" fill="#ffe000" stroke="#ff00de" strokeWidth="3" /></svg>) },
-  { key: 'herz', label: 'Herz', points3: 80, points4: 160, points5: 400, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><path d="M32 58s-26-15-26-30a14 14 0 0 1 28-4 14 14 0 0 1 28 4c0 15-26 30-26 30z" fill="#ff00de" stroke="#ffe000" strokeWidth="3" /></svg>) },
-  { key: 'quadrat', label: 'Quadrat', points3: 60, points4: 120, points5: 300, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><rect x="14" y="14" width="36" height="36" fill="#44ff44" stroke="#ffe000" strokeWidth="3" /></svg>) },
-  { key: 'dreieck', label: 'Dreieck', points3: 40, points4: 80, points5: 200, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><polygon points="32,12 56,52 8,52" fill="#4ee9ff" stroke="#ffe000" strokeWidth="3" /></svg>) },
-  { key: 'kreis', label: 'Kreis', points3: 30, points4: 60, points5: 150, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="#fff" stroke="#ff00de" strokeWidth="3" /></svg>) },
+  { key: 'joker', label: 'Joker', points3: 200, points4: 400, points5: 1000, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="#222" stroke="#ff00de" strokeWidth="3" /><text x="32" y="38" textAnchor="middle" fontSize="22" fill="#ff00de" fontWeight="bold">J</text></svg>) },
+  { key: 'stern', label: 'Stern', points3: 110, points4: 220, points5: 550, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><polygon points="32,7 39,27 61,27 43,39 50,59 32,47 14,59 21,39 3,27 25,27" fill="#444" stroke="#ff00de" strokeWidth="3" /></svg>) },
+  { key: 'herz', label: 'Herz', points3: 80, points4: 160, points5: 400, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><path d="M32 58s-26-15-26-30a14 14 0 0 1 28-4 14 14 0 0 1 28 4c0 15-26 30-26 30z" fill="#ff00de" stroke="#ff00de" strokeWidth="3" /></svg>) },
+  { key: 'quadrat', label: 'Quadrat', points3: 60, points4: 120, points5: 300, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><rect x="14" y="14" width="36" height="36" fill="#222" stroke="#ff00de" strokeWidth="3" /></svg>) },
+  { key: 'dreieck', label: 'Dreieck', points3: 40, points4: 80, points5: 200, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><polygon points="32,12 56,52 8,52" fill="#222" stroke="#ff00de" strokeWidth="3" /></svg>) },
+  { key: 'kreis', label: 'Kreis', points3: 30, points4: 60, points5: 150, svg: (<svg className="neon-symbol" viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="#222" stroke="#ff00de" strokeWidth="3" /></svg>) },
 ];
 
 const KOMBIS = [
@@ -49,7 +49,7 @@ function Reel({ symbol, held, animating, onToggle }) {
       onKeyDown={e => { if (e.key === " " || e.key === "Enter") onToggle(); }}
     >
       <div className="reel-frame">
-        {sObj ? sObj.svg : <div style={{height:48}} />}
+        {sObj ? sObj.svg : <div style={{height:36}} />}
       </div>
     </div>
   );
@@ -127,7 +127,7 @@ export default function App() {
           return newAnim;
         });
         if (i===4) socket.emit("roll-reels", { roomId: room });
-      }, 350 + i*120);
+      }, 250 + i*90);
     });
   }
 
@@ -152,7 +152,7 @@ export default function App() {
   }
 
   return (
-    <div style={{maxWidth:"100vw",margin:"0 auto",padding:"0.5em"}}>
+    <div style={{maxWidth:"100vw",margin:"0 auto",padding:"0.5em",background:"#181622",minHeight:"100vh"}}>
       <div className="neon-panel" style={{marginBottom:"0.7em", textAlign:"center"}}>
         <div className="neon-text" style={{fontSize:"2.2rem"}}>PICK UP</div>
         <div style={{fontSize:"1.1em",color:"#ffe000",textShadow:"0 0 10px #ff00de"}}>Online Multiplayer – Deutsche Version</div>
@@ -217,14 +217,7 @@ export default function App() {
               <div>Runde: {sp.runde}</div>
               <div style={{fontWeight:"bold",fontSize:"1.2em"}}>Gesamtpunkte: {sp.punkte}</div>
               <div>Ziehungen: {sp.drawsLeft} / 3</div>
-              <div style={{
-                display:"flex",
-                justifyContent:"center",
-                gap:"16px",
-                margin:"1em auto 0.7em auto",
-                flexWrap: "nowrap",
-                minHeight: "90px"
-              }}>
+              <div className="reels-row">
                 {(sp.reels||[]).map((s,i)=>(
                   <Reel
                     key={i}
@@ -241,35 +234,26 @@ export default function App() {
               </div>
               <div style={{fontSize:"0.85em",color:"#fff",minHeight:18}}>{sp.message}</div>
               {/* Wertungsliste im Kombi-Design */}
-              <div className="player-kombis" style={{marginTop:"0.7em"}}>
-                <div style={{fontWeight:"bold",marginBottom:"0.1em"}}>Wertung:</div>
-                <ul style={{listStyle:"none",padding:0}}>
+              <div className="player-kombis" style={{marginTop:"0.5em"}}>
+                <ul className="score-list">
                   {tableRows.map(row=>(
                     <li key={row.key}
+                      className="score-row"
                       style={{
-                        marginBottom:8,
-                        padding:"8px 14px",
-                        borderRadius:"10px",
-                        background: row.verbraucht ? "rgba(255,0,222,0.09)" : "rgba(255,0,222,0.22)",
-                        color: row.verbraucht ? "#aaa" : "#fff",
-                        fontWeight:"bold",
-                        boxShadow: "0 0 8px #ff00de",
-                        minHeight:"40px",
-                        display:"flex",
-                        alignItems:"center",
-                        justifyContent:"space-between"
+                        background: row.verbraucht ? "#181628" : "#23203b",
+                        color: row.verbraucht ? "#aaa" : "#fff"
                       }}
                     >
-                      <span>
-                        {row.icon && <span style={{marginRight:7,verticalAlign:"middle"}}>{row.icon}</span>}
+                      <span className="score-left">
+                        {row.icon && <span className="score-icon">{row.icon}</span>}
                         {row.type==="kombi" && row.label}
                       </span>
-                      <span>
+                      <span className="score-right">
                         {meId===sp.id && !roomState.ended && !sp.beendet && row.showBtn && !row.verbraucht && (
-                          <button className="neon-btn" style={{marginLeft:10,padding:"4px 12px",fontSize:"1em"}} onClick={()=>row.type==="symbol"?chooseCombo(null,row.key):chooseCombo(row.key,null)}>Wählen</button>
+                          <button className="neon-btn" style={{padding:"3px 13px",fontSize:"1em",height:"28px"}} onClick={()=>row.type==="symbol"?chooseCombo(null,row.key):chooseCombo(row.key,null)}>Wählen</button>
                         )}
                         {row.verbraucht && (
-                          <span style={{marginLeft:7,color:"#aaa"}}>✓ erfüllt</span>
+                          <span className="score-done">✓ erfüllt</span>
                         )}
                       </span>
                     </li>
@@ -277,7 +261,7 @@ export default function App() {
                 </ul>
               </div>
               {meId===sp.id && !roomState.ended && !sp.beendet && (
-                <div style={{marginTop:"1.1em",textAlign:"center"}}>
+                <div style={{marginTop:"1em",textAlign:"center"}}>
                   <button className="neon-btn" onClick={roll}>Ziehen</button>
                 </div>
               )}
