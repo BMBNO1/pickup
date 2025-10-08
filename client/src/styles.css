@@ -51,25 +51,48 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 58px;
-  height: 78px;
+  width: 64px;
+  height: 96px;
   margin: 0.2em;
-  border-radius: 15px;
-  border: 2.5px solid #ff00de;
+  border-radius: 16px;
+  border: 3px solid #ff00de;
   background: linear-gradient(135deg,#511c7e 60%,#25174d 100%);
-  box-shadow: 0 0 24px #ff00de, 0 0 8px #7d28be inset;
+  box-shadow: 0 0 32px #ff00de, 0 0 12px #7d28be inset;
   position: relative;
   transition: border 0.18s, box-shadow 0.18s;
   outline: none;
+  overflow: hidden;
 }
 .neon-reel.held {
-  box-shadow: 0 0 48px #ffe000, 0 0 24px #ffe000 inset;
-  border: 2.5px solid #ffe000;
+  box-shadow: 0 0 60px #ffe000, 0 0 30px #ffe000 inset;
+  border: 3px solid #ffe000;
+}
+.neon-reel .reel-frame {
+  width: 56px;
+  height: 56px;
+  background: #180834;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #ffe000, 0 0 20px #ff00de inset;
+  margin-bottom: 2px;
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: box-shadow 0.18s;
+}
+.neon-reel.spinning .reel-frame {
+  animation: spin-reel 0.35s cubic-bezier(.64,.21,.7,1.63) infinite;
+}
+@keyframes spin-reel {
+  0% { transform: rotate(0deg) scale(1); opacity: 1;}
+  85% { transform: rotate(180deg) scale(1.2); opacity: 0.7;}
+  100% { transform: rotate(360deg) scale(1); opacity: 1;}
 }
 .neon-symbol {
-  width: 36px;
-  height: 36px;
-  margin-top: 4px;
+  width: 34px;
+  height: 34px;
+  margin-top: 0px;
   margin-bottom: 2px;
   display: block;
   filter: drop-shadow(0 0 8px #fff) drop-shadow(0 0 12px #ff00de);
@@ -86,24 +109,22 @@ body {
   text-shadow: 0 0 4px #ffe000;
   font-weight: bold;
 }
-
-/* Responsive Grid for Player Panels */
+/* Player Panel Grid */
 .players-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 2em;
   justify-content: center;
   align-items: stretch;
   margin: 0 auto 1em auto;
   width: 100%;
-  max-width: 1100px;
+  max-width: 1200px;
 }
-
 .player-card {
   background: rgba(255,0,222,0.09);
   border-radius: 18px;
-  padding: 1.4em 1.3em;
-  box-shadow: 0 0 16px #ff00de;
+  padding: 1.5em 1.3em 1.6em 1.3em;
+  box-shadow: 0 0 24px #ff00de;
   min-width: 0;
   max-width: 430px;
   width: 100%;
@@ -114,14 +135,14 @@ body {
 }
 .player-card.me {
   background: rgba(255,224,0,0.18);
-  box-shadow: 0 0 22px #ffe000;
+  box-shadow: 0 0 28px #ffe000;
 }
 .player-info {
   font-weight: bold;
   color: #ffe000;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
   text-align: center;
-  font-size: 1.13em;
+  font-size: 1.17em;
 }
 .player-kombis {
   width: 100%;
