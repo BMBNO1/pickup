@@ -35,9 +35,6 @@ function Reel({ symbol, held, onToggle }) {
     >
       {sObj ? sObj.svg : <div style={{height:48}} />}
       <div style={{fontSize:"0.9em",marginTop:"-3px"}}>{sObj ? sObj.label : ""}</div>
-      {held && <div style={{
-        position: "absolute", top: 3, right: 4, background: "#ffe000", color: "#511c7e", borderRadius: "10px", padding: "0 6px", fontSize: "0.80em", fontWeight: "bold", boxShadow: "0 0 6px #ffe000"
-      }}>GEHALTEN</div>}
     </div>
   );
 }
@@ -133,127 +130,106 @@ export default function App() {
         </div>
       )}
       {roomState.started && (
-        <div className="neon-panel">
-          <div style={{
-            display:"flex",
-            justifyContent:"space-between",
-            marginBottom:"1em",
-            flexWrap:"wrap",
-            alignItems:"center"
-          }}>
-            <div className="neon-round">Runde: {roomState.runde} / 5</div>
-            <div className="neon-current">Max. Spieler: 4</div>
-            <div className="neon-current">Raum: {room}</div>
-            <button className="neon-btn" onClick={leaveRoom}>Verlassen</button>
-          </div>
-          <div className="players-row">
-            {spieler.map(sp=>{
-              // Symbolpunkte, sortiert nach Symbolwert absteigend
-              const symbolResultsSorted = [...(sp.symbolResults || [])]
-                .sort((a,b)=>b.points5-a.points5);
-              return (
-              <div key={sp.id} className={`player-card${meId===sp.id ? " me" : ""}`}>
-                <div className="player-info">{sp.name}</div>
-                <div>Runde: {sp.runde}</div>
-                <div>Punkte: {sp.punkte}</div>
-                <div>Ziehungen: {sp.drawsLeft} / 3</div>
-                <div style={{
-                  display:"flex",
-                  justifyContent:"center",
-                  gap:"10px",
-                  margin:"0.7em 0",
-                  flexWrap: "wrap"
-                }}>
-                  {(sp.reels||[]).map((s,i)=>(
-                    <Reel
-                      key={i}
-                      symbol={s}
-                      held={sp.holds && sp.holds[i]}
-                      onToggle={()=>{
-                        if(meId===sp.id && !roomState.ended && !sp.beendet && sp.drawsLeft>0){
-                          toggleHold(i);
-                        }
-                      }}
-                    />
-                  ))}
-                </div>
-                <div style={{fontSize:"0.85em",color:"#fff",minHeight:18}}>{sp.message}</div>
-                {symbolResultsSorted.length > 0 && (
-                  <div style={{marginBottom:8,marginTop:6}}>
-                    <div style={{fontWeight:"bold",marginBottom:"2px"}}>Symbolpunkte:</div>
-                    <div style={{display:"flex",gap:"8px",flexWrap:"wrap",justifyContent:"center"}}>
-                      {symbolResultsSorted.map(s=>(
-                        <div key={s.key} style={{background:"rgba(255,224,0,0.15)",borderRadius:"7px",padding:"3px 10px",color:"#ffe000",fontWeight:"bold",fontSize:"0.95em",boxShadow:"0 0 6px #ffe000"}}>
-                          {SYMBOLS.find(o=>o.key===s.key)?.svg}
-                          {s.label}: {s.count}x = {s.punkte} Punkte
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {meId===sp.id && !roomState.ended && !sp.beendet && (sp.auswahlKombis.length > 0 || sp.auswahlSymbole.length > 0) && (
-                  <div style={{marginTop:"0.5em"}}>
-                    {sp.auswahlSymbole.length > 0 && (
-                      <div>
-                        <div style={{fontWeight:"bold",marginBottom:"0.2em"}}>Wähle ein Symbol:</div>
-                        <div style={{display:"flex",gap:"7px",flexWrap:"wrap"}}>
-                          {sp.auswahlSymbole.map(s=>(
-                            <button className="neon-btn" key={s.key} onClick={()=>chooseCombo(null,s.key)}>
-                              {s.label} ({s.count}x = {s.punkte} Punkte)
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {sp.auswahlKombis.length > 0 && (
-                      <div style={{marginTop:"8px"}}>
-                        <div style={{fontWeight:"bold",marginBottom:"0.2em"}}>Oder wähle eine Kombination:</div>
-                        <div style={{display:"flex",gap:"7px",flexWrap:"wrap"}}>
-                          {[...sp.auswahlKombis].sort((a,b)=>b.points-a.points).map(k=>(
-                            <button className="neon-btn" key={k.name} onClick={()=>chooseCombo(k.name,null)}>
-                              {k.name} (+{k.points} Punkte)
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {meId===sp.id && !roomState.ended && !sp.beendet && sp.drawsLeft>0 && (
-                  <div style={{marginTop:"0.5em"}}>
-                    <button className="neon-btn" style={{marginTop:"0.5em"}} onClick={roll}>Ziehen</button>
-                  </div>
-                )}
-                <div className="player-kombis" style={{marginTop:"0.4em"}}>
-                  <div style={{fontWeight:"bold"}}>Kombinationen:</div>
-                  <ul style={{listStyle:"none",padding:0}}>
-                    {[...KOMBIS].sort((a,b)=>b.points-a.points).map(k=>(
-                      <li key={k.name}
-                        style={{
-                          marginBottom:5,
-                          padding:"5px 8px",
-                          borderRadius:"8px",
-                          background: sp.verbrauchte.includes(k.name) ? "rgba(255,0,222,0.12)" : "rgba(255,0,222,0.22)",
-                          fontWeight:"bold",
-                          color: sp.verbrauchte.includes(k.name) ? "#aaa" : "#fff",
-                          boxShadow: "0 0 8px #ff00de"
-                        }}
-                      >
-                        {k.name} <span style={{float:"right",color:"#ffe000"}}>{k.points} Punkte</span>
-                        {sp.verbrauchte.includes(k.name) && <span style={{marginLeft:12,color:"#aaa"}}>✓ erfüllt</span>}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+        <div className="players-row">
+          {spieler.map(sp=>{
+            // Symbolpunkte sortiert nach Joker, Stern... Kreis
+            const symbolResultsSorted = [...(sp.symbolResults || [])]
+              .sort((a,b)=>b.points5-a.points5);
+            return (
+            <div key={sp.id} className={`player-card${meId===sp.id ? " me" : ""}`}>
+              <div className="player-info">{sp.name}</div>
+              <div>Runde: {sp.runde}</div>
+              <div>Punkte: {sp.punkte}</div>
+              <div>Ziehungen: {sp.drawsLeft} / 3</div>
+              <div style={{
+                display:"flex",
+                justifyContent:"center",
+                gap:"10px",
+                margin:"0.7em 0",
+                flexWrap: "wrap"
+              }}>
+                {(sp.reels||[]).map((s,i)=>(
+                  <Reel
+                    key={i}
+                    symbol={s}
+                    held={sp.holds && sp.holds[i]}
+                    onToggle={()=>{
+                      if(meId===sp.id && !roomState.ended && !sp.beendet && sp.drawsLeft>0){
+                        toggleHold(i);
+                      }
+                    }}
+                  />
+                ))}
               </div>
-            )})}
-          </div>
-          {showEnd && sieger.length > 0 && (
-            <div style={{marginTop:"2em", fontWeight:"bold", color:"#ffe000", fontSize:"1.3em"}}>
-              Sieger: {sieger.map(s=>s.name).join(", ")} mit {sieger[0].punkte} Punkten!
-              <div><button className="neon-btn" style={{marginTop:"1em"}} onClick={restartGame}>Neues Spiel starten</button></div>
+              <div style={{fontSize:"0.85em",color:"#fff",minHeight:18}}>{sp.message}</div>
+              {/* Symbolpunkte-Liste wie Kombis, immer sichtbar! */}
+              <div className="player-kombis" style={{marginTop:"0.7em"}}>
+                <div style={{fontWeight:"bold",marginBottom:"0.1em"}}>Symbolpunkte:</div>
+                <ul style={{listStyle:"none",padding:0,display:"flex",flexWrap:"wrap",gap:"0.5em"}}>
+                  {symbolResultsSorted.map(s=>(
+                    <li key={s.key}
+                      style={{
+                        padding:"6px 12px",
+                        borderRadius:"10px",
+                        background: s.verbraucht ? "rgba(255,0,222,0.10)" : s.punkte>0 ? "rgba(255,224,0,0.25)" : "rgba(255,0,222,0.22)",
+                        color: s.verbraucht ? "#aaa" : "#ffe000",
+                        fontWeight:"bold",
+                        minWidth:110,
+                        boxShadow: s.punkte>0 ? "0 0 8px #ffe000" : "0 0 8px #ff00de"
+                      }}
+                    >
+                      <span style={{marginRight:6,verticalAlign:"middle"}}>{SYMBOLS.find(o=>o.key===s.key)?.svg}</span>
+                      {s.label} {s.punkteLabel && !s.verbraucht ? `(${s.punkteLabel})` : ""} 
+                      <span style={{float:"right"}}>{s.punkte} Punkte</span>
+                      {s.verbraucht && <span style={{marginLeft:7,color:"#aaa"}}>✓ erfüllt</span>}
+                      {/* Wählbarer Button */}
+                      {meId===sp.id && !roomState.ended && !sp.beendet && sp.auswahlSymbole.some(ss=>ss.key===s.key) && (
+                        <button className="neon-btn" style={{marginLeft:6,padding:"3px 10px",fontSize:"0.95em"}} onClick={()=>chooseCombo(null,s.key)}>Wählen</button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {/* Kombi-Liste immer sichtbar */}
+              <div className="player-kombis" style={{marginTop:"0.7em"}}>
+                <div style={{fontWeight:"bold",marginBottom:"0.1em"}}>Kombinationen:</div>
+                <ul style={{listStyle:"none",padding:0}}>
+                  {[...KOMBIS].sort((a,b)=>b.points-a.points).map(k=>(
+                    <li key={k.name}
+                      style={{
+                        marginBottom:8,
+                        padding:"8px 14px",
+                        borderRadius:"10px",
+                        background: sp.verbrauchte.includes(k.name) ? "rgba(255,0,222,0.10)" : "rgba(255,0,222,0.22)",
+                        color: sp.verbrauchte.includes(k.name) ? "#aaa" : "#fff",
+                        fontWeight:"bold",
+                        boxShadow: "0 0 8px #ff00de"
+                      }}
+                    >
+                      {k.name} <span style={{float:"right",color:"#ffe000"}}>{k.points} Punkte</span>
+                      {sp.verbrauchte.includes(k.name) && <span style={{marginLeft:7,color:"#aaa"}}>✓ erfüllt</span>}
+                      {/* Wählbarer Button */}
+                      {meId===sp.id && !roomState.ended && !sp.beendet && sp.auswahlKombis.some(kk=>kk.name===k.name) && (
+                        <button className="neon-btn" style={{marginLeft:8,padding:"3px 10px",fontSize:"0.95em"}} onClick={()=>chooseCombo(k.name,null)}>Wählen</button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {/* Ziehen */}
+              {meId===sp.id && !roomState.ended && !sp.beendet && sp.drawsLeft>0 && (
+                <div style={{marginTop:"1em",textAlign:"center"}}>
+                  <button className="neon-btn" onClick={roll}>Ziehen</button>
+                </div>
+              )}
             </div>
-          )}
+          )})}
+        </div>
+      )}
+      {showEnd && sieger.length > 0 && (
+        <div className="neon-panel" style={{marginTop:"2em", fontWeight:"bold", color:"#ffe000", fontSize:"1.3em",textAlign:"center"}}>
+          Sieger: {sieger.map(s=>s.name).join(", ")} mit {sieger[0].punkte} Punkten!
+          <div><button className="neon-btn" style={{marginTop:"1em"}} onClick={restartGame}>Neues Spiel starten</button></div>
         </div>
       )}
     </div>

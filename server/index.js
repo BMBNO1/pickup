@@ -90,7 +90,7 @@ function comboCheck(reels, verbrauchte) {
   return result;
 }
 
-// Für die Symbolpunkte: Gibt ein Array zurück mit SymbolKey, Anzahl und Punkte (ab 3)
+// Gibt vollständige Symbolpunkte-Liste zurück (inkl. „verbraucht“)
 function symbolPoints(reels, symbolVerbrauchte) {
   const freq = countSymbols(reels);
   return SYMBOLS.map(s => {
@@ -101,14 +101,15 @@ function symbolPoints(reels, symbolVerbrauchte) {
       else if (n === 4) { punkte = s.points4; label = "4x"; }
       else if (n === 5) { punkte = s.points5; label = "5x"; }
     }
-    return { ...s, count: n, punkte, punkteLabel: label };
-  }).filter(s => s.punkte > 0);
+    return { ...s, count: n, punkte, punkteLabel: label, verbraucht: symbolVerbrauchte.includes(s.key) };
+  });
 }
 
 function noKombiLeft(sp) {
-  // Keine Kombis mehr auswählbar und keine Symbolpunkte auswählbar
-  return comboCheck(sp.reels, sp.verbrauchte).length === 0 &&
-    symbolPoints(sp.reels, sp.symbolVerbrauchte).length === 0;
+  // Keine Kombis/Symbole mehr auswählbar
+  const kombis = comboCheck(sp.reels, sp.verbrauchte).length;
+  const symbole = symbolPoints(sp.reels, sp.symbolVerbrauchte).filter(s=>s.punkte > 0 && !s.verbraucht).length;
+  return kombis === 0 && symbole === 0;
 }
 
 io.on('connection', (socket) => {
@@ -169,9 +170,30 @@ io.on('connection', (socket) => {
     if (sp.drawsLeft === 0 || noKombiLeft(sp)) {
       // Nach letztem Dreh oder nichts mehr möglich
       sp.auswahlKombis = comboCheck(sp.reels, sp.verbrauchte);
-      sp.auswahlSymbole = symbolPoints(sp.reels, sp.symbolVerbrauchte);
+      sp.auswahlSymbole = symbolPoints(sp.reels, sp.symbolVerbrauchte)
+        .filter(s=>s.punkte > 0 && !s.verbraucht);
+    }
+    // Automatisches Rundenende: Wenn keine Auswahl mehr, Runde beenden
+    if (noKombiLeft(sp)) {
+      sp.beendet = true;
+      sp.runde = room.runde;
     }
     io.to(roomId).emit('game-update', room);
+    // Wenn alle Spieler fertig -> nächste Runde
+    if (room.spieler.every(s => s.beendet)) {
+      if (room.runde >= MAX_RUNDEN) {
+        room.ended = true;
+        io.to(roomId).emit('game-ended', room);
+      } else {
+        room.runde += 1;
+        for (const s of room.spieler) {
+          Object.assign(s, createPlayer(s.id, s.name));
+          s.runde = room.runde;
+          s.beendet = false;
+        }
+        io.to(roomId).emit('next-round', room);
+      }
+    }
   });
 
   socket.on('choose-combo', ({ roomId, kombiName, symbolKey }) => {
@@ -196,15 +218,13 @@ io.on('connection', (socket) => {
     sp.punkte += punkteAdd;
     sp.auswahlKombis = [];
     sp.auswahlSymbole = [];
-    sp.symbolResults = symbolPoints([], []);
-    // Nach Wertung: Runde vorbei wenn nichts mehr möglich oder alles aufgebraucht
-    const alleKombisVerbraucht = sp.verbrauchte.length === KOMBIS.length;
-    const alleSymboleVerbraucht = sp.symbolVerbrauchte.length === SYMBOLS.length;
-    if (alleKombisVerbraucht && alleSymboleVerbraucht) {
+    sp.symbolResults = symbolPoints([], sp.symbolVerbrauchte);
+    // Nach Wertung: Runde vorbei wenn keine Auswahl mehr
+    if (noKombiLeft(sp)) {
       sp.beendet = true;
       sp.runde = room.runde;
     } else {
-      // Für nächste Runde: alles zurücksetzen
+      // Für nächste Zug: alles zurücksetzen
       sp.reels = Array(5).fill(null);
       sp.holds = Array(5).fill(false);
       sp.drawsLeft = 3;
