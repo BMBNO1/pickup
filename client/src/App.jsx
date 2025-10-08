@@ -43,7 +43,7 @@ function Reel({ symbol, held, animating, onToggle }) {
       className={`neon-reel${held ? " held" : ""}${animating ? " spinning" : ""}`}
       tabIndex={0}
       role="button"
-      title="Zum Halten auf das Symbol tippen/klicken"
+      title="Zum Halten tippen/klicken"
       style={{cursor: "pointer", outline: "none"}}
       onClick={onToggle}
       onKeyDown={e => { if (e.key === " " || e.key === "Enter") onToggle(); }}
@@ -65,38 +65,17 @@ export default function App() {
   const [roomState, setRoomState] = useState({ started: false, runde: 1, ended: false, maxRunden: 5, spieler: [] });
   const [message, setMessage] = useState('');
   const [showEnd, setShowEnd] = useState(false);
-
   const [reelAnim, setReelAnim] = useState([false,false,false,false,false]);
   const [showFirework, setShowFirework] = useState(false);
 
   useEffect(() => {
-    socket.on("connect", () => {
-      setConnected(true);
-      setMeId(socket.id);
-    });
+    socket.on("connect", () => { setConnected(true); setMeId(socket.id); });
     socket.on("disconnect", () => setConnected(false));
-    socket.on("room-data", (data) => {
-      setRoomState(data);
-      setSpieler(data.spieler || []);
-    });
-    socket.on("game-update", (data) => {
-      setRoomState(data);
-      setSpieler(data.spieler || []);
-      setShowEnd(data.ended || false);
-    });
-    socket.on("game-ended", (data) => {
-      setRoomState(data);
-      setSpieler(data.spieler || []);
-      setShowEnd(true);
-      playSound('round');
-    });
-    socket.on("next-round", (data) => {
-      setRoomState(data);
-      setSpieler(data.spieler || []);
-      setMessage(`Runde ${data.runde} beginnt!`);
-      playSound('round');
-    });
-    return () => { socket.off(); }
+    socket.on("room-data", (data) => { setRoomState(data); setSpieler(data.spieler || []); });
+    socket.on("game-update", (data) => { setRoomState(data); setSpieler(data.spieler || []); setShowEnd(data.ended || false); });
+    socket.on("game-ended", (data) => { setRoomState(data); setSpieler(data.spieler || []); setShowEnd(true); playSound('round'); });
+    socket.on("next-round", (data) => { setRoomState(data); setSpieler(data.spieler || []); setMessage(`Runde ${data.runde} beginnt!`); playSound('round'); });
+    return () => socket.off();
   }, []);
 
   function createRoom() {
@@ -152,11 +131,13 @@ export default function App() {
   }
 
   return (
-    <div style={{maxWidth:"100vw",margin:"0 auto",padding:"0.5em",background:"#181622",minHeight:"100vh"}}>
-      <div className="neon-panel" style={{marginBottom:"0.7em", textAlign:"center"}}>
+    <div style={{background:"#181622",minHeight:"100vh",width:"100vw",margin:0,padding:0}}>
+      <div className="neon-panel" style={{marginBottom:"0.6em", textAlign:"center"}}>
         <div className="neon-text" style={{fontSize:"2.2rem"}}>PICK UP</div>
-        <div style={{fontSize:"1.1em",color:"#ffe000",textShadow:"0 0 10px #ff00de"}}>Online Multiplayer – Deutsche Version</div>
+        <div style={{fontSize:"1.1em",color:"#ffe000"}}>Online Multiplayer – Deutsche Version</div>
       </div>
+
+      {/* Lobby (aus Code 2 bleibt erhalten) */}
       {!roomState.started && (
         <div className="neon-panel">
           <div>
@@ -180,11 +161,12 @@ export default function App() {
           <div style={{marginTop:"1em",color:"#ffe000"}}>{message}</div>
         </div>
       )}
+
+      {/* Spielfeld (aus Code 1) */}
       {roomState.started && (
         <div className="players-row">
           {spieler.map(sp=>{
-            const symbolResultsSorted = [...(sp.symbolResults || [])]
-              .sort((a,b)=>b.points5-a.points5);
+            const symbolResultsSorted = [...(sp.symbolResults || [])].sort((a,b)=>b.points5-a.points5);
             const kombisSorted = [...KOMBIS].sort((a,b)=>b.points-a.points);
             const tableRows = [
               ...symbolResultsSorted.map(s=>({
@@ -206,75 +188,67 @@ export default function App() {
             ];
 
             return (
-            <div key={sp.id} className={`player-card${meId===sp.id ? " me" : ""}`} style={{position:"relative"}}>
-              {showFirework && meId===sp.id && (
-                <div className="firework-points">
-                  <span className="firework-emoji">🎉</span>
-                  <span className="firework-points-text">900 Punkte!</span>
-                </div>
-              )}
-              <div className="player-info">{sp.name}</div>
-              <div>Runde: {sp.runde}</div>
-              <div style={{fontWeight:"bold",fontSize:"1.2em"}}>Gesamtpunkte: {sp.punkte}</div>
-              <div>Ziehungen: {sp.drawsLeft} / 3</div>
-              <div className="reels-row">
-                {(sp.reels||[]).map((s,i)=>(
-                  <Reel
-                    key={i}
-                    symbol={s}
-                    held={sp.holds && sp.holds[i]}
-                    animating={meId===sp.id ? reelAnim[i] : false}
-                    onToggle={()=>{
-                      if(meId===sp.id && !roomState.ended && !sp.beendet && sp.drawsLeft>0){
-                        toggleHold(i);
-                      }
-                    }}
-                  />
-                ))}
-              </div>
-              <div style={{fontSize:"0.85em",color:"#fff",minHeight:18}}>{sp.message}</div>
-              {/* Wertungsliste im Kombi-Design */}
-              <div className="player-kombis" style={{marginTop:"0.5em"}}>
-                <ul className="score-list">
-                  {tableRows.map(row=>(
-                    <li key={row.key}
-                      className="score-row"
-                      style={{
-                        background: row.verbraucht ? "#181628" : "#23203b",
-                        color: row.verbraucht ? "#aaa" : "#fff"
-                      }}
-                    >
-                      <span className="score-left">
-                        {row.icon && <span className="score-icon">{row.icon}</span>}
-                        {row.type==="kombi" && row.label}
-                      </span>
-                      <span className="score-right">
-                        {meId===sp.id && !roomState.ended && !sp.beendet && row.showBtn && !row.verbraucht && (
-                          <button className="neon-btn" style={{padding:"3px 13px",fontSize:"1em",height:"28px"}} onClick={()=>row.type==="symbol"?chooseCombo(null,row.key):chooseCombo(row.key,null)}>Wählen</button>
-                        )}
-                        {row.verbraucht && (
-                          <span className="score-done">✓ erfüllt</span>
-                        )}
-                      </span>
-                    </li>
+              <div key={sp.id} className={`player-card${meId===sp.id ? " me" : ""}`}>
+                {showFirework && meId===sp.id && (
+                  <div className="firework-points">
+                    <span className="firework-emoji">🎉</span>
+                    <span className="firework-points-text">900 Punkte!</span>
+                  </div>
+                )}
+                <div className="player-info">{sp.name}</div>
+                <div>Runde: {sp.runde}</div>
+                <div style={{fontWeight:"bold"}}>Gesamtpunkte: {sp.punkte}</div>
+                <div>Ziehungen: {sp.drawsLeft} / 3</div>
+                <div className="reels-row">
+                  {(sp.reels||[]).map((s,i)=>(
+                    <Reel
+                      key={i}
+                      symbol={s}
+                      held={sp.holds && sp.holds[i]}
+                      animating={meId===sp.id ? reelAnim[i] : false}
+                      onToggle={()=>{ if(meId===sp.id && !roomState.ended && !sp.beendet && sp.drawsLeft>0){ toggleHold(i); } }}
+                    />
                   ))}
-                </ul>
-              </div>
-              {meId===sp.id && !roomState.ended && !sp.beendet && (
-                <div style={{marginTop:"1em",textAlign:"center"}}>
-                  <button className="neon-btn" onClick={roll}>Ziehen</button>
                 </div>
-              )}
-            </div>
-          )})}
+                <div className="player-kombis">
+                  <ul className="score-list">
+                    {tableRows.map(row=>(
+                      <li key={row.key} className="score-row"
+                        style={{background: row.verbraucht ? "#181628" : "#23203b"}}>
+                        <span className="score-left">
+                          {row.icon && <span className="score-icon">{row.icon}</span>}
+                          {row.type==="kombi" && row.label}
+                        </span>
+                        <span className="score-right">
+                          {meId===sp.id && !roomState.ended && !sp.beendet && row.showBtn && !row.verbraucht && (
+                            <button className="neon-btn" onClick={()=>row.type==="symbol"?chooseCombo(null,row.key):chooseCombo(row.key,null)}>Wählen</button>
+                          )}
+                          {row.verbraucht && <span className="score-done">✓ erfüllt</span>}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                {meId===sp.id && !roomState.ended && !sp.beendet && (
+                  <div style={{marginTop:"0.8em",textAlign:"center"}}>
+                    <button className="neon-btn" onClick={roll}>Ziehen</button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
+
+      {/* Endscreen */}
       {showEnd && sieger.length > 0 && (
         <div className="neon-panel" style={{marginTop:"2em", fontWeight:"bold", color:"#ffe000", fontSize:"1.3em",textAlign:"center"}}>
           Sieger: {sieger.map(s=>s.name).join(", ")} mit {sieger[0].punkte} Punkten!
           <div><button className="neon-btn" style={{marginTop:"1em"}} onClick={restartGame}>Neues Spiel starten</button></div>
         </div>
       )}
+
+      {/* Sound-Toggle */}
       <div style={{position:"fixed",top:18,right:22,zIndex:100}}>
         <button className="neon-btn" style={{fontSize:"1.2em"}} onClick={()=>{window.soundOn=!window.soundOn;}}>
           {window.soundOn ? "🔊" : "🔇"}
