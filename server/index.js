@@ -104,6 +104,7 @@ function symbolPoints(reels, symbolVerbrauchte) {
   });
 }
 
+// Prüft ob noch Wertung möglich ist
 function noKombiLeft(sp) {
   const kombis = comboCheck(sp.reels, sp.verbrauchte).length;
   const symbole = symbolPoints(sp.reels, sp.symbolVerbrauchte).filter(s=>s.punkte > 0 && !s.verbraucht).length;
@@ -160,14 +161,21 @@ io.on('connection', (socket) => {
     const room = rooms[roomId];
     if (!room || !room.started) return;
     const sp = room.spieler.find(s => s.id === socket.id);
-    if (!sp || sp.beendet) return;
+    if (!sp || sp.beendet || sp.drawsLeft <= 0) return;
     sp.reels = sp.reels.map((s,i) => sp.holds[i] ? s : SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)].key);
     sp.drawsLeft -= 1;
     sp.symbolResults = symbolPoints(sp.reels, sp.symbolVerbrauchte);
     sp.auswahlKombis = comboCheck(sp.reels, sp.verbrauchte);
     sp.auswahlSymbole = symbolPoints(sp.reels, sp.symbolVerbrauchte)
       .filter(s=>s.punkte > 0 && !s.verbraucht);
+
+    // Runde beenden wenn keine Wertung mehr möglich
     if (noKombiLeft(sp)) {
+      sp.beendet = true;
+      sp.runde = room.runde;
+    }
+    // Wenn nach 3 Ziehungen keine Auswahl möglich
+    if (sp.drawsLeft === 0 && sp.auswahlKombis.length === 0 && sp.auswahlSymbole.length === 0) {
       sp.beendet = true;
       sp.runde = room.runde;
     }
@@ -208,19 +216,21 @@ io.on('connection', (socket) => {
       sp.message = `Symbol "${symbolData.label}" gewählt!`;
     }
     sp.punkte += punkteAdd;
-    // Panel sofort zurücksetzen, damit wieder 3/3 Drehungen möglich sind
+    // Nach Wertung: Reset für nächsten Zug, außer wirklich Runde vorbei
+    sp.auswahlKombis = [];
+    sp.auswahlSymbole = [];
     if (noKombiLeft(sp)) {
       sp.beendet = true;
       sp.runde = room.runde;
+      sp.symbolResults = symbolPoints([], sp.symbolVerbrauchte);
     } else {
       sp.reels = Array(5).fill(null);
       sp.holds = Array(5).fill(false);
       sp.drawsLeft = 3;
       sp.symbolResults = symbolPoints([], sp.symbolVerbrauchte);
-      sp.auswahlKombis = [];
-      sp.auswahlSymbole = [];
     }
     io.to(roomId).emit('game-update', room);
+
     if (room.spieler.every(s => s.beendet)) {
       if ((room.maxRunden || 5) <= room.runde) {
         room.ended = true;
