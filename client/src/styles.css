@@ -3,6 +3,8 @@ body {
   background: radial-gradient(circle at 50% 30%, #7d28be 50%, #25174d 100%);
   color: #fff;
   font-family: 'Orbitron', 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
 }
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 .neon-text {
@@ -13,7 +15,7 @@ body {
     0 0 12px #ff00de,
     0 0 24px #b500a6,
     0 0 32px #7d28be;
-  font-size: 3rem;
+  font-size: 2.4rem;
   letter-spacing: 0.15em;
   text-align: center;
 }
@@ -22,7 +24,10 @@ body {
   border: 3px solid #d8aaff;
   border-radius: 16px;
   box-shadow: 0 0 32px #6a238d, 0 0 8px #ff00de inset;
-  padding: 1.5rem;
+  padding: 1.2rem;
+  margin: 0 auto;
+  max-width: 1000px;
+  width: 90vw;
 }
 .neon-btn {
   background: linear-gradient(90deg,#ff00de 30%,#511c7e 70%);
@@ -31,12 +36,13 @@ body {
   border-radius: 8px;
   box-shadow: 0 0 6px #ff00de, 0 0 12px #ff00de;
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   padding: 0.7em 1.2em;
   cursor: pointer;
   transition: filter 0.2s;
+  margin: 4px 0;
 }
-.neon-btn:hover {
+.neon-btn:hover, .neon-btn:active {
   filter: brightness(1.25);
 }
 .neon-reel {
@@ -66,14 +72,95 @@ body {
   filter: drop-shadow(0 0 8px #fff) drop-shadow(0 0 12px #ff00de);
 }
 .neon-round {
-  font-size: 1.2em;
+  font-size: 1.1em;
   font-family: 'Orbitron', 'Arial', sans-serif;
   color: #ffe000;
   text-shadow: 0 0 6px #ffe000, 0 0 18px #ff00de;
 }
 .neon-current {
-  font-size: 1.1em;
+  font-size: 1em;
   color: #fff;
   text-shadow: 0 0 4px #ffe000;
   font-weight: bold;
+}
+.players-row {
+  display: flex;
+  gap: 1.5em;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+}
+.player-card {
+  flex: 1 1 220px;
+  min-width: 220px;
+  max-width: 320px;
+  background: rgba(255,0,222,0.09);
+  border-radius: 12px;
+  padding: 1em;
+  box-shadow: 0 0 8px #ff00de;
+  margin-bottom: 1em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.player-card.me {
+  background: rgba(255,224,0,0.15);
+  box-shadow: 0 0 16px #ffe000;
+}
+.player-info {
+  font-weight: bold;
+  color: #ffe000;
+  margin-bottom: 3px;
+  text-align: center;
+}
+.player-kombis {
+  width: 100%;
+}
+@media (max-width: 900px) {
+  .neon-panel {
+    padding: 0.7rem;
+    max-width: 98vw;
+  }
+  .players-row {
+    gap: 0.7em;
+  }
+  .player-card, .player-card.me {
+    min-width: 180px;
+    max-width: 98vw;
+    padding: 0.7em;
+  }
+}
+@media (max-width: 600px) {
+  .neon-text {
+    font-size: 1.3rem;
+  }
+  .neon-panel {
+    padding: 0.45rem;
+    border-radius: 8px;
+    width: 98vw;
+    max-width: 98vw;
+  }
+  .players-row {
+    flex-direction: column;
+    gap: 0.4em;
+  }
+  .player-card, .player-card.me {
+    min-width: 98vw;
+    max-width: 98vw;
+    padding: 0.4em;
+    font-size: 0.95em;
+  }
+  .neon-btn {
+    font-size: 0.95rem;
+    padding: 0.5em 0.8em;
+  }
+  .neon-reel, .neon-reel.held {
+    width: 36px;
+    height: 48px;
+    margin: 0.1em;
+  }
+  .neon-symbol {
+    width: 22px;
+    height: 22px;
+  }
 }

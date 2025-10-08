@@ -38,7 +38,7 @@ function createPlayer(id, name) {
     beendet: false,
     runde: 1,
     message: '',
-    auswahlKombis: [] // Kombis die gerade zur Auswahl stehen (nach Dreh)
+    auswahlKombis: []
   };
 }
 
@@ -51,7 +51,6 @@ function createRoom() {
   };
 }
 
-// Kombi-Checks
 function hasNOfAKind(reels, n) {
   const freq = {};
   reels.forEach(s => { freq[s] = (freq[s]||0)+1; });
@@ -88,7 +87,6 @@ function comboCheck(reels, verbrauchte) {
 }
 
 io.on('connection', (socket) => {
-  // Raum erstellen
   socket.on('create-room', ({ roomId, name }, cb) => {
     if (!roomId || !name) return cb && cb({ ok: false, error: 'Room/Name fehlt' });
     if (!rooms[roomId]) rooms[roomId] = createRoom();
@@ -110,7 +108,6 @@ io.on('connection', (socket) => {
     cb && cb({ ok: true });
   });
 
-  // Spiel starten
   socket.on('start-game', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room || room.started) return;
@@ -125,19 +122,17 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('game-update', room);
   });
 
-  // Symbol halten
   socket.on('toggle-hold', ({ roomId, index }) => {
     const room = rooms[roomId];
     if (!room || !room.started) return;
     const sp = room.spieler.find(s => s.id === socket.id);
     if (!sp || sp.beendet || sp.drawsLeft === 0) return;
     const heldCount = sp.holds.filter(Boolean).length;
-    if (!sp.holds[index] && heldCount >= 2) return; // Max 2 Halten
+    if (!sp.holds[index] && heldCount >= 2) return;
     sp.holds[index] = !sp.holds[index];
     io.to(roomId).emit('game-update', room);
   });
 
-  // Ziehen
   socket.on('roll-reels', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room || !room.started) return;
@@ -145,14 +140,12 @@ io.on('connection', (socket) => {
     if (!sp || sp.beendet || sp.drawsLeft === 0) return;
     sp.reels = sp.reels.map((s,i) => sp.holds[i] ? s : SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]);
     sp.drawsLeft -= 1;
-    // Wenn letzte Ziehung, dann Kombis anbieten
     if (sp.drawsLeft === 0) {
       sp.auswahlKombis = comboCheck(sp.reels, sp.verbrauchte);
     }
     io.to(roomId).emit('game-update', room);
   });
 
-  // Kombi auswählen
   socket.on('choose-combo', ({ roomId, kombiName }) => {
     const room = rooms[roomId];
     if (!room || !room.started) return;
@@ -164,7 +157,6 @@ io.on('connection', (socket) => {
     sp.verbrauchte.push(k.name);
     sp.message = `Kombination "${k.name}" gewählt! +${k.points * 0.5} Punkte`;
     sp.auswahlKombis = [];
-    // Runde beenden prüfen
     const alleKombisVerbraucht = sp.verbrauchte.length === KOMBIS.length;
     const keineKombiMehr = comboCheck(sp.reels, sp.verbrauchte).length === 0;
     if (alleKombisVerbraucht || keineKombiMehr) {
@@ -175,8 +167,6 @@ io.on('connection', (socket) => {
     sp.holds = Array(5).fill(false);
     sp.reels = Array(5).fill(null);
     io.to(roomId).emit('game-update', room);
-
-    // Prüfe ob alle fertig, dann nächste Runde oder Spielende
     if (room.spieler.every(s => s.beendet)) {
       if (room.runde >= MAX_RUNDEN) {
         room.ended = true;
@@ -193,7 +183,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Neues Spiel nach Ende
   socket.on('restart-game', ({ roomId }) => {
     const room = rooms[roomId];
     if (!room) return;
@@ -209,7 +198,6 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('game-update', room);
   });
 
-  // Disconnect/Verlassen
   socket.on('leave-room', ({ roomId }) => {
     socket.leave(roomId);
     if (rooms[roomId]) {

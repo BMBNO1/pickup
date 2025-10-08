@@ -39,7 +39,6 @@ function Reel({ symbol, held, onToggle }) {
 }
 
 export default function App() {
-  // Verbindungs-/Raumzustände
   const [connected, setConnected] = useState(false);
   const [room, setRoom] = useState("room1");
   const [name, setName] = useState("");
@@ -77,7 +76,6 @@ export default function App() {
     return () => { socket.off(); }
   }, []);
 
-  // Raum betreten/Spieler hinzufügen
   function createRoom() {
     if (!name) { setMessage("Bitte gib deinen Namen ein."); return; }
     socket.emit("create-room", { roomId: room, name }, (res) => {
@@ -93,21 +91,17 @@ export default function App() {
   function startGame() { socket.emit("start-game", { roomId: room }); }
   function leaveRoom() { socket.emit("leave-room", { roomId: room }); window.location.reload(); }
 
-  // Eigener Spielerobjekt
   const me = spieler.find(s => s.id === meId);
 
-  // Aktionen für eigenen Spieler
   function toggleHold(i) { socket.emit("toggle-hold", { roomId: room, index: i }); }
   function roll() { socket.emit("roll-reels", { roomId: room }); }
   function chooseCombo(name) { socket.emit("choose-combo", { roomId: room, kombiName: name }); }
   function restartGame() { socket.emit("restart-game", { roomId: room }); setShowEnd(false); }
 
-  // Kombi-Highlight für eigenen Spieler
   function isErfüllbar(name) {
     if (!me) return false;
     const verbrauchte = me.verbrauchte || [];
     if (verbrauchte.includes(name)) return false;
-    // Kombi-Logik wie Server
     const reels = me.reels || [];
     if (name === "Drei gleiche") return hasNOfAKind(reels,3);
     if (name === "Vier gleiche") return hasNOfAKind(reels,4);
@@ -137,7 +131,6 @@ export default function App() {
     return reels.includes("joker");
   }
 
-  // Gewinner ermitteln
   let sieger = [];
   if (showEnd && spieler.length > 0) {
     let maxPunkte = Math.max(...spieler.map(s=>s.punkte));
@@ -145,8 +138,8 @@ export default function App() {
   }
 
   return (
-    <div style={{maxWidth:900,margin:"0 auto",padding:"2em"}}>
-      <div className="neon-panel" style={{marginBottom:"1em", textAlign:"center"}}>
+    <div style={{maxWidth:"100vw",margin:"0 auto",padding:"0.5em"}}>
+      <div className="neon-panel" style={{marginBottom:"0.7em", textAlign:"center"}}>
         <div className="neon-text" style={{fontSize:"2.2rem"}}>PICK UP</div>
         <div style={{fontSize:"1.1em",color:"#ffe000",textShadow:"0 0 10px #ff00de"}}>Online Multiplayer – Deutsche Version</div>
       </div>
@@ -170,22 +163,22 @@ export default function App() {
       )}
       {roomState.started && (
         <div className="neon-panel">
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:"1em"}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:"1em",flexWrap:"wrap"}}>
             <div className="neon-round">Runde: {roomState.runde} / {MAX_RUNDEN}</div>
             <div className="neon-current">Max. Spieler: {MAX_SPIELER}</div>
             <div className="neon-current">Raum: {room}</div>
             <button className="neon-btn" onClick={leaveRoom}>Verlassen</button>
           </div>
-          <div style={{display:"flex",gap:"2em",justifyContent:"center"}}>
+          <div className="players-row">
             {spieler.map(sp=>(
-              <div key={sp.id} style={{width:180,background:meId===sp.id?"rgba(255,224,0,0.2)":"rgba(255,0,222,0.1)",borderRadius:"12px",padding:"1em",boxShadow:"0 0 8px #ff00de"}}>
-                <div style={{fontWeight:"bold",color:"#ffe000",marginBottom:3}}>{sp.name}</div>
+              <div key={sp.id} className={`player-card${meId===sp.id ? " me" : ""}`}>
+                <div className="player-info">{sp.name}</div>
                 <div>Runde: {sp.runde}</div>
                 <div>Punkte: {sp.punkte}</div>
                 <div>Ziehungen: {sp.drawsLeft} / 3</div>
                 <div style={{display:"flex",justifyContent:"center",gap:"6px",margin:"0.7em 0"}}>
                   {(sp.reels||[]).map((s,i)=>(
-                    <div key={i} className={`neon-reel${sp.holds && sp.holds[i] ? " held" : ""}`} style={{width:38,height:56,minWidth:38}}>
+                    <div key={i} className={`neon-reel${sp.holds && sp.holds[i] ? " held" : ""}`}>
                       {s ? SYMBOL_SVGS[s] : <div style={{height:28}} />}
                     </div>
                   ))}
@@ -208,12 +201,16 @@ export default function App() {
                 {meId===sp.id && !roomState.ended && !sp.beendet && sp.drawsLeft>0 && (
                   <div style={{marginTop:"0.5em"}}>
                     <div style={{display:"flex",gap:"5px",justifyContent:"center"}}>
-                      {sp.reels && sp.reels.map((_,i)=><button className="neon-btn" style={{fontSize:"0.8em",padding:"2px 8px"}} key={i} onClick={()=>toggleHold(i)}>{sp.holds[i]?"GEHALTEN":"HALTEN"}</button>)}
+                      {sp.reels && sp.reels.map((_,i)=>
+                        <button className="neon-btn" style={{fontSize:"0.8em",padding:"2px 8px"}} key={i} onClick={()=>toggleHold(i)}>
+                          {sp.holds[i]?"GEHALTEN":"HALTEN"}
+                        </button>
+                      )}
                     </div>
                     <button className="neon-btn" style={{marginTop:"0.5em"}} onClick={roll}>Ziehen</button>
                   </div>
                 )}
-                <div style={{marginTop:"0.4em"}}>
+                <div className="player-kombis" style={{marginTop:"0.4em"}}>
                   <div style={{fontWeight:"bold"}}>Kombinationen:</div>
                   <ul style={{listStyle:"none",padding:0}}>
                     {KOMBIS.map(k=>(
