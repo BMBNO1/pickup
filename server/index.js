@@ -5,165 +5,228 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
-app.get('/', (req, res) => res.send('Pick Up server running'));
+app.get('/', (req, res) => res.send('Pick Up Multiplayer Server läuft!'));
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-const rooms = {};
-const MAX_PLAYERS = 4;
-const SYMBOLS = ['star', 'moon', 'horseshoe', 'heart', 'crown', 'clover'];
-const GOAL_SCORE = 220000;
+const MAX_SPIELER = 4;
+const MAX_RUNDEN = 5;
+const SYMBOLS = ['herz', 'stern', 'kreis', 'dreieck', 'quadrat', 'joker'];
+const KOMBIS = [
+  { name: "Drei gleiche", points: 100 },
+  { name: "Vier gleiche", points: 400 },
+  { name: "Fünf gleiche", points: 800 },
+  { name: "Zwei gleiche", points: 50 },
+  { name: "Full House", points: 500 },
+  { name: "Fünf verschiedene", points: 700 },
+  { name: "Joker", points: 200 }
+];
 
-function createNewGameState(playersOrder) {
+const rooms = {};
+
+function createPlayer(id, name) {
   return {
-    round: 1,
-    currentPlayerIndex: 0,
-    playersOrder: playersOrder,
+    id, name,
     reels: Array(5).fill(null),
     holds: Array(5).fill(false),
-    rollsLeft: 3,
-    scores: Object.fromEntries(playersOrder.map(id => [id, 0])),
+    drawsLeft: 3,
+    punkte: 0,
+    verbrauchte: [],
+    beendet: false,
+    runde: 1,
+    message: '',
+    auswahlKombis: [] // Kombis die gerade zur Auswahl stehen (nach Dreh)
+  };
+}
+
+function createRoom() {
+  return {
+    spieler: [],
     started: false,
+    runde: 1,
     ended: false
   };
 }
 
+// Kombi-Checks
+function hasNOfAKind(reels, n) {
+  const freq = {};
+  reels.forEach(s => { freq[s] = (freq[s]||0)+1; });
+  return Object.values(freq).includes(n);
+}
+function isFullHouse(reels) {
+  const freq = {};
+  reels.forEach(s => { freq[s] = (freq[s]||0)+1; });
+  const vals = Object.values(freq).sort();
+  return vals.length === 2 && vals[0] === 2 && vals[1] === 3;
+}
+function isFiveDifferent(reels) {
+  const set = new Set(reels);
+  return set.size === 5;
+}
+function isJoker(reels) {
+  return reels.includes("joker");
+}
+function comboCheck(reels, verbrauchte) {
+  const result = [];
+  for (const k of KOMBIS) {
+    if (verbrauchte.includes(k.name)) continue;
+    let ok = false;
+    if (k.name === "Drei gleiche") ok = hasNOfAKind(reels,3);
+    else if (k.name === "Vier gleiche") ok = hasNOfAKind(reels,4);
+    else if (k.name === "Fünf gleiche") ok = hasNOfAKind(reels,5);
+    else if (k.name === "Zwei gleiche") ok = hasNOfAKind(reels,2);
+    else if (k.name === "Full House") ok = isFullHouse(reels);
+    else if (k.name === "Fünf verschiedene") ok = isFiveDifferent(reels);
+    else if (k.name === "Joker") ok = isJoker(reels);
+    if (ok) result.push(k);
+  }
+  return result;
+}
+
 io.on('connection', (socket) => {
-  console.log('conn', socket.id);
-
+  // Raum erstellen
   socket.on('create-room', ({ roomId, name }, cb) => {
-    if (!roomId) return cb && cb({ ok: false, error: 'no-room-id' });
-    if (!name) return cb && cb({ ok: false, error: 'no-name' });
-
-    rooms[roomId] = rooms[roomId] || { players: {}, game: null };
-    if (Object.keys(rooms[roomId].players).length >= MAX_PLAYERS) {
-      return cb && cb({ ok: false, error: 'room-full' });
-    }
-    rooms[roomId].players[socket.id] = { name, id: socket.id };
+    if (!roomId || !name) return cb && cb({ ok: false, error: 'Room/Name fehlt' });
+    if (!rooms[roomId]) rooms[roomId] = createRoom();
+    if (rooms[roomId].spieler.length >= MAX_SPIELER) return cb && cb({ ok: false, error: 'Raum voll' });
+    if (rooms[roomId].spieler.some(sp => sp.id === socket.id)) return cb && cb({ ok: false, error: 'Schon im Raum' });
+    rooms[roomId].spieler.push(createPlayer(socket.id, name));
     socket.join(roomId);
-
-    io.to(roomId).emit('room-data', {
-      room: roomId,
-      players: Object.values(rooms[roomId].players),
-      game: rooms[roomId].game
-    });
+    io.to(roomId).emit('room-data', rooms[roomId]);
     cb && cb({ ok: true });
   });
 
   socket.on('join-room', ({ roomId, name }, cb) => {
-    if (!rooms[roomId]) return cb && cb({ ok: false, error: 'room-not-found' });
-    if (!name) return cb && cb({ ok: false, error: 'no-name' });
-    if (Object.keys(rooms[roomId].players).length >= MAX_PLAYERS) {
-      return cb && cb({ ok: false, error: 'room-full' });
-    }
-    rooms[roomId].players[socket.id] = { name, id: socket.id };
+    if (!rooms[roomId]) return cb && cb({ ok: false, error: 'Raum existiert nicht' });
+    if (rooms[roomId].spieler.length >= MAX_SPIELER) return cb && cb({ ok: false, error: 'Raum voll' });
+    if (rooms[roomId].spieler.some(sp => sp.id === socket.id)) return cb && cb({ ok: false, error: 'Schon im Raum' });
+    rooms[roomId].spieler.push(createPlayer(socket.id, name));
     socket.join(roomId);
-
-    io.to(roomId).emit('room-data', {
-      room: roomId,
-      players: Object.values(rooms[roomId].players),
-      game: rooms[roomId].game
-    });
+    io.to(roomId).emit('room-data', rooms[roomId]);
     cb && cb({ ok: true });
   });
 
+  // Spiel starten
   socket.on('start-game', ({ roomId }) => {
-    const r = rooms[roomId];
-    if (!r) return;
-    const playersOrder = Object.keys(r.players);
-    if (playersOrder.length < 2) return; // Mindestens 2 Spieler
-    r.game = createNewGameState(playersOrder);
-    r.game.started = true;
-
-    io.to(roomId).emit('game-started', r.game);
+    const room = rooms[roomId];
+    if (!room || room.started) return;
+    room.started = true;
+    room.ended = false;
+    room.runde = 1;
+    for (const sp of room.spieler) {
+      Object.assign(sp, createPlayer(sp.id, sp.name));
+      sp.runde = 1;
+      sp.beendet = false;
+    }
+    io.to(roomId).emit('game-update', room);
   });
 
+  // Symbol halten
   socket.on('toggle-hold', ({ roomId, index }) => {
-    const r = rooms[roomId];
-    if (!r || !r.game || r.game.ended) return;
-    if (index < 0 || index > 4) return;
-    r.game.holds[index] = !r.game.holds[index];
-    io.to(roomId).emit('game-update', r.game);
+    const room = rooms[roomId];
+    if (!room || !room.started) return;
+    const sp = room.spieler.find(s => s.id === socket.id);
+    if (!sp || sp.beendet || sp.drawsLeft === 0) return;
+    const heldCount = sp.holds.filter(Boolean).length;
+    if (!sp.holds[index] && heldCount >= 2) return; // Max 2 Halten
+    sp.holds[index] = !sp.holds[index];
+    io.to(roomId).emit('game-update', room);
   });
 
+  // Ziehen
   socket.on('roll-reels', ({ roomId }) => {
-    const r = rooms[roomId];
-    if (!r || !r.game || r.game.ended) return;
-    if (r.game.rollsLeft <= 0) return;
-    for (let i = 0; i < r.game.reels.length; i++) {
-      if (!r.game.holds[i]) {
-        r.game.reels[i] = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-      }
+    const room = rooms[roomId];
+    if (!room || !room.started) return;
+    const sp = room.spieler.find(s => s.id === socket.id);
+    if (!sp || sp.beendet || sp.drawsLeft === 0) return;
+    sp.reels = sp.reels.map((s,i) => sp.holds[i] ? s : SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)]);
+    sp.drawsLeft -= 1;
+    // Wenn letzte Ziehung, dann Kombis anbieten
+    if (sp.drawsLeft === 0) {
+      sp.auswahlKombis = comboCheck(sp.reels, sp.verbrauchte);
     }
-    r.game.rollsLeft -= 1;
-
-    if (r.game.rollsLeft === 0) {
-      // Score calculation (Fun4Four rules)
-      const freq = {};
-      r.game.reels.forEach(s => freq[s] = (freq[s] || 0) + 1);
-      const best = Object.values(freq).reduce((a, b) => Math.max(a, b), 0);
-
-      let scoreGain = 0;
-      if (best === 5) scoreGain = 10000;
-      else if (best === 4) scoreGain = 3000;
-      else if (best === 3) scoreGain = 1000;
-
-      // Crown multiplier
-      const crowns = r.game.reels.filter(x => x === 'crown').length;
-      if (crowns > 0) scoreGain *= (1 + crowns);
-
-      const pid = r.game.playersOrder[r.game.currentPlayerIndex];
-      r.game.scores[pid] = (r.game.scores[pid] || 0) + scoreGain;
-
-      // Nächster Spieler / nächste Runde
-      r.game.currentPlayerIndex = (r.game.currentPlayerIndex + 1) % r.game.playersOrder.length;
-      if (r.game.currentPlayerIndex === 0) r.game.round += 1;
-
-      // Spielende prüfen (Ziel erreicht)
-      const totalScore = Object.values(r.game.scores).reduce((a, b) => a + b, 0);
-      if (totalScore >= GOAL_SCORE) {
-        r.game.ended = true;
-        io.to(roomId).emit('game-update', r.game);
-        io.to(roomId).emit('game-ended', { game: r.game, room: roomId });
-        return;
-      }
-
-      r.game.rollsLeft = 3;
-      r.game.holds = Array(5).fill(false);
-      r.game.reels = Array(5).fill(null);
-    }
-    io.to(roomId).emit('game-update', r.game);
+    io.to(roomId).emit('game-update', room);
   });
 
+  // Kombi auswählen
+  socket.on('choose-combo', ({ roomId, kombiName }) => {
+    const room = rooms[roomId];
+    if (!room || !room.started) return;
+    const sp = room.spieler.find(s => s.id === socket.id);
+    if (!sp || sp.beendet || sp.drawsLeft !== 0) return;
+    const k = KOMBIS.find(k => k.name === kombiName);
+    if (!k) return;
+    sp.punkte += k.points * 0.5;
+    sp.verbrauchte.push(k.name);
+    sp.message = `Kombination "${k.name}" gewählt! +${k.points * 0.5} Punkte`;
+    sp.auswahlKombis = [];
+    // Runde beenden prüfen
+    const alleKombisVerbraucht = sp.verbrauchte.length === KOMBIS.length;
+    const keineKombiMehr = comboCheck(sp.reels, sp.verbrauchte).length === 0;
+    if (alleKombisVerbraucht || keineKombiMehr) {
+      sp.beendet = true;
+      sp.runde = room.runde;
+    }
+    sp.drawsLeft = 3;
+    sp.holds = Array(5).fill(false);
+    sp.reels = Array(5).fill(null);
+    io.to(roomId).emit('game-update', room);
+
+    // Prüfe ob alle fertig, dann nächste Runde oder Spielende
+    if (room.spieler.every(s => s.beendet)) {
+      if (room.runde >= MAX_RUNDEN) {
+        room.ended = true;
+        io.to(roomId).emit('game-ended', room);
+      } else {
+        room.runde += 1;
+        for (const s of room.spieler) {
+          Object.assign(s, createPlayer(s.id, s.name));
+          s.runde = room.runde;
+          s.beendet = false;
+        }
+        io.to(roomId).emit('next-round', room);
+      }
+    }
+  });
+
+  // Neues Spiel nach Ende
+  socket.on('restart-game', ({ roomId }) => {
+    const room = rooms[roomId];
+    if (!room) return;
+    room.started = false;
+    room.ended = false;
+    room.runde = 1;
+    for (const sp of room.spieler) {
+      Object.assign(sp, createPlayer(sp.id, sp.name));
+      sp.runde = 1;
+      sp.beendet = false;
+    }
+    io.to(roomId).emit('room-data', room);
+    io.to(roomId).emit('game-update', room);
+  });
+
+  // Disconnect/Verlassen
   socket.on('leave-room', ({ roomId }) => {
     socket.leave(roomId);
-    if (rooms[roomId] && rooms[roomId].players[socket.id]) {
-      delete rooms[roomId].players[socket.id];
+    if (rooms[roomId]) {
+      rooms[roomId].spieler = rooms[roomId].spieler.filter(s => s.id !== socket.id);
+      if (rooms[roomId].spieler.length === 0) delete rooms[roomId];
+      else io.to(roomId).emit('room-data', rooms[roomId]);
     }
-    io.to(roomId).emit('room-data', {
-      room: roomId,
-      players: rooms[roomId] ? Object.values(rooms[roomId].players) : [],
-      game: rooms[roomId]?.game
-    });
   });
 
   socket.on('disconnect', () => {
     for (const rid of Object.keys(rooms)) {
-      if (rooms[rid].players[socket.id]) {
-        delete rooms[rid].players[socket.id];
-        io.to(rid).emit('room-data', {
-          room: rid,
-          players: Object.values(rooms[rid].players),
-          game: rooms[rid].game
-        });
-      }
-      if (Object.keys(rooms[rid].players).length === 0) delete rooms[rid];
+      rooms[rid].spieler = rooms[rid].spieler.filter(s => s.id !== socket.id);
+      if (rooms[rid].spieler.length === 0) delete rooms[rid];
+      else io.to(rid).emit('room-data', rooms[rid]);
     }
   });
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log('Server running on', PORT));
+server.listen(PORT, () => console.log('Server läuft auf', PORT));
