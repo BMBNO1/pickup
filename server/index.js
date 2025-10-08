@@ -90,7 +90,6 @@ function comboCheck(reels, verbrauchte) {
   return result;
 }
 
-// Symbolpunkte-Liste inkl. verbraucht
 function symbolPoints(reels, symbolVerbrauchte) {
   const freq = countSymbols(reels);
   return SYMBOLS.map(s => {
@@ -105,7 +104,6 @@ function symbolPoints(reels, symbolVerbrauchte) {
   });
 }
 
-// Keine Kombis/Symbole mehr auswählbar?
 function noKombiLeft(sp) {
   const kombis = comboCheck(sp.reels, sp.verbrauchte).length;
   const symbole = symbolPoints(sp.reels, sp.symbolVerbrauchte).filter(s=>s.punkte > 0 && !s.verbraucht).length;
@@ -210,9 +208,7 @@ io.on('connection', (socket) => {
       sp.message = `Symbol "${symbolData.label}" gewählt!`;
     }
     sp.punkte += punkteAdd;
-    sp.auswahlKombis = [];
-    sp.auswahlSymbole = [];
-    sp.symbolResults = symbolPoints([], sp.symbolVerbrauchte);
+    // Panel sofort zurücksetzen, damit wieder 3/3 Drehungen möglich sind
     if (noKombiLeft(sp)) {
       sp.beendet = true;
       sp.runde = room.runde;
@@ -220,6 +216,9 @@ io.on('connection', (socket) => {
       sp.reels = Array(5).fill(null);
       sp.holds = Array(5).fill(false);
       sp.drawsLeft = 3;
+      sp.symbolResults = symbolPoints([], sp.symbolVerbrauchte);
+      sp.auswahlKombis = [];
+      sp.auswahlSymbole = [];
     }
     io.to(roomId).emit('game-update', room);
     if (room.spieler.every(s => s.beendet)) {

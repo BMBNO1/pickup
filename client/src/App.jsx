@@ -245,32 +245,24 @@ export default function App() {
               <div className="player-kombis" style={{marginTop:"0.7em"}}>
                 <div style={{fontWeight:"bold",marginBottom:"0.1em"}}>Wertung:</div>
                 <table className="points-table">
-                  <thead>
-                    <tr>
-                      <th style={{textAlign:"left"}}>Symbol/Kombi</th>
-                      <th></th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
                   <tbody>
                   {tableRows.map(row=>(
                     <tr key={row.key}
+                      className="points-row"
                       style={{
                         background: row.verbraucht ? "rgba(255,0,222,0.09)" : row.punkte>0 ? "rgba(255,224,0,0.15)" : "rgba(255,0,222,0.12)",
-                        color: row.verbraucht ? "#aaa" : "#fff"
+                        color: row.verbraucht ? "#aaa" : "#fff",
+                        height: "42px"
                       }}
                     >
-                      <td style={{textAlign:"left"}}>
-                        {row.icon && <span style={{marginRight:"8px",verticalAlign:"middle"}}>{row.icon}</span>}
+                      <td style={{textAlign:"center",verticalAlign:"middle",width:"54px"}}>
+                        {row.icon && <span style={{verticalAlign:"middle"}}>{row.icon}</span>}
                         {row.type==="kombi" && row.label}
                       </td>
-                      <td>
+                      <td style={{width:"120px",textAlign:"center"}}>
                         {meId===sp.id && !roomState.ended && !sp.beendet && row.showBtn && (
-                          <button className="neon-btn" style={{padding:"4px 12px",fontSize:"1em"}} onClick={()=>row.type==="symbol"?chooseCombo(null,row.key):chooseCombo(row.key,null)}>Wählen</button>
+                          <button className="neon-btn" style={{padding:"2px 10px",fontSize:"0.98em",height:"28px"}} onClick={()=>row.type==="symbol"?chooseCombo(null,row.key):chooseCombo(row.key,null)}>Wählen</button>
                         )}
-                      </td>
-                      <td>
-                        {row.verbraucht ? <span style={{color:"#aaa"}}>✓ erfüllt</span> : row.punkte>0 ? <span style={{color:"#ffe000"}}>Jetzt möglich</span> : ""}
                       </td>
                     </tr>
                   ))}
@@ -278,7 +270,7 @@ export default function App() {
                 </table>
               </div>
               {meId===sp.id && !roomState.ended && !sp.beendet && (
-                <div style={{marginTop:"1.4em",textAlign:"center"}}>
+                <div style={{marginTop:"1.1em",textAlign:"center"}}>
                   <button className="neon-btn" onClick={roll}>Ziehen</button>
                 </div>
               )}
